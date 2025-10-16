@@ -2,8 +2,23 @@ import { useState, useEffect } from 'react';
 import { Users, Search, Phone, Mail, Building2, MapPin, Calendar, TrendingUp, X, Edit2, Save, FileText, Download, Filter } from 'lucide-react';
 import { leadService, Lead, LeadStatus, STATUS_COLORS, STATUS_LABELS, LeadType } from '../../services/leadService';
 
+// Leads Manager Component - Fixed async/await issues
 export default function LeadsManager() {
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [stats, setStats] = useState({
+    total: 0,
+    new: 0,
+    contacted: 0,
+    qualified: 0,
+    negotiation: 0,
+    converted: 0,
+    lost: 0,
+    byType: {
+      university: 0,
+      school: 0,
+      organization: 0,
+    }
+  });
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<LeadStatus | 'all'>('all');
   const [filterType, setFilterType] = useState<LeadType | 'all'>('all');
@@ -16,11 +31,17 @@ export default function LeadsManager() {
 
   useEffect(() => {
     loadLeads();
+    loadStats();
   }, []);
 
-  const loadLeads = () => {
-    const allLeads = leadService.getAllLeads();
+  const loadLeads = async () => {
+    const allLeads = await leadService.getAllLeads();
     setLeads(allLeads);
+  };
+
+  const loadStats = async () => {
+    const leadStats = await leadService.getLeadStats();
+    setStats(leadStats);
   };
 
   const handleStatusChange = (lead: Lead) => {
@@ -29,13 +50,14 @@ export default function LeadsManager() {
     setShowStatusModal(true);
   };
 
-  const saveStatusChange = () => {
+  const saveStatusChange = async () => {
     if (selectedLead) {
-      leadService.updateLeadStatus(selectedLead.id, newStatus, 'Admin');
+      await leadService.updateLeadStatus(selectedLead.id, newStatus, 'Admin');
       if (newNote.trim()) {
-        leadService.addNote(selectedLead.id, newNote, 'Admin');
+        await leadService.addNote(selectedLead.id, newNote, 'Admin');
       }
-      loadLeads();
+      await loadLeads();
+      await loadStats();
       setShowStatusModal(false);
       setNewNote('');
       setSelectedLead(null);
@@ -47,21 +69,22 @@ export default function LeadsManager() {
     setShowDetailsModal(true);
   };
 
-  const handleAddNote = () => {
+  const handleAddNote = async () => {
     if (selectedLead && newNote.trim()) {
-      leadService.addNote(selectedLead.id, newNote, 'Admin');
+      await leadService.addNote(selectedLead.id, newNote, 'Admin');
       setNewNote('');
-      loadLeads();
+      await loadLeads();
       // Refresh the selected lead
-      const updatedLead = leadService.getLeadById(selectedLead.id);
+      const updatedLead = await leadService.getLeadById(selectedLead.id);
       if (updatedLead) setSelectedLead(updatedLead);
     }
   };
 
-  const handleDeleteLead = (leadId: string) => {
+  const handleDeleteLead = async (leadId: string) => {
     if (confirm('Are you sure you want to delete this lead? This action cannot be undone.')) {
-      leadService.deleteLead(leadId);
-      loadLeads();
+      await leadService.deleteLead(leadId);
+      await loadLeads();
+      await loadStats();
       setShowDetailsModal(false);
       setSelectedLead(null);
     }
@@ -108,8 +131,6 @@ export default function LeadsManager() {
 
     return matchesSearch && matchesStatus && matchesType;
   });
-
-  const stats = leadService.getLeadStats();
 
   return (
     <>
