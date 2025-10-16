@@ -10,8 +10,18 @@ const databaseUrl = typeof import.meta !== 'undefined' && import.meta.env
   : process.env.DATABASE_URL || process.env.VITE_DATABASE_URL;
 
 if (!databaseUrl) {
-  throw new Error('DATABASE_URL or VITE_DATABASE_URL is not set in environment variables');
+  console.error('❌ DATABASE_URL or VITE_DATABASE_URL is not set in environment variables');
+  console.error('Available env vars:', {
+    hasImportMeta: typeof import.meta !== 'undefined',
+    hasViteEnv: typeof import.meta !== 'undefined' && import.meta.env ? 'yes' : 'no',
+    viteEnvKeys: typeof import.meta !== 'undefined' && import.meta.env
+      ? Object.keys(import.meta.env)
+      : [],
+  });
+  throw new Error('DATABASE_URL or VITE_DATABASE_URL is not set in environment variables. Please set VITE_DATABASE_URL in your deployment platform.');
 }
+
+console.log('✅ Database URL configured');
 
 // Create Neon connection
 const sql = neon(databaseUrl);
