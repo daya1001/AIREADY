@@ -1,0 +1,181 @@
+{
+  "modules": [
+    {
+      "id": "1",
+      "title": "Foundations of Intelligence & AI Evolution",
+      "duration": "4 hours",
+      "description": "Build a solid conceptual base in what intelligence is — and how AI simulates it.",
+      "professionalConcepts": "Understanding natural vs artificial intelligence, AI history from symbolic systems to generative AI, core functional differences between AI/ML/DL, the four pillars of AI systems, and real-world applications.",
+      "advancedIntegration": "Cognitive science foundations, AI as cognitive amplifier, representation concepts in LLMs, neuro-symbolic AI and hybrid cognition models.",
+      "topics": [
+        "What is Intelligence? Natural vs Artificial",
+        "AI History: Symbolic → Machine Learning → Deep Learning → Generative AI",
+        "AI vs ML vs DL – Core Functional Differences",
+        "The 4 Pillars of AI: Data, Algorithms, Compute, Feedback",
+        "Real-World AI Examples (ChatGPT, Gemini, Grok, Copilot, etc.)",
+        "Cognitive Science & Symbolic AI foundations",
+        "AI as a cognitive amplifier — reasoning vs association",
+        "Concept of 'representation' in AI and how LLMs mimic understanding",
+        "Neuro-symbolic AI and hybrid cognition"
+      ],
+      "pdfUrl": "/curriculum/module-1.pdf"
+    },
+    {
+      "id": "2",
+      "title": "Data, Information & Intelligence",
+      "duration": "4 hours",
+      "description": "Understand data as the fuel and structural foundation of AI systems.",
+      "professionalConcepts": "Data types and sources, lifecycle management from collection to learning, quality control and bias prevention, cloud infrastructure, and privacy frameworks including India's DPDP Act.",
+      "advancedIntegration": "Information theory and Shannon entropy, embeddings and vector space logic, bias detection methodologies, and global data governance frameworks like GDPR and EU AI Act.",
+      "topics": [
+        "What is Data? Types and Sources",
+        "Data Lifecycle: Collection → Preparation → Learning",
+        "Garbage In, Garbage Out – Data Quality and Bias",
+        "Cloud Data Infrastructure and Big Data",
+        "Privacy, Security & India's DPDP Act",
+        "Shannon entropy & information theory",
+        "Embeddings and vector space logic",
+        "Dataset bias detection and mitigation strategies",
+        "Data governance frameworks (GDPR, EU AI Act)"
+      ],
+      "pdfUrl": "/curriculum/module-2.pdf"
+    },
+    {
+      "id": "3",
+      "title": "Machine Learning & Intelligent Learning Theory",
+      "duration": "4 hours",
+      "description": "Explore how machines learn, adapt, and make predictions.",
+      "professionalConcepts": "Three learning paradigms (supervised, unsupervised, reinforcement), training and prediction processes, accuracy and generalization concepts, evaluation metrics, and real-world ML applications.",
+      "advancedIntegration": "Gradient descent and loss minimization, transfer learning and fine-tuning strategies, RLHF (Reinforcement Learning with Human Feedback), and self-supervised learning mechanisms.",
+      "topics": [
+        "The 3 Learning Types: Supervised, Unsupervised, Reinforcement",
+        "Core Process: Input → Training → Prediction → Feedback",
+        "Overfitting, Accuracy, and Generalization",
+        "Evaluation Metrics (Precision, Recall, F1, ROC)",
+        "Real-life ML Systems (Spotify, Netflix, Healthcare AI)",
+        "Gradient descent and loss minimization",
+        "Transfer learning and fine-tuning",
+        "Reinforcement Learning with Human Feedback (RLHF)",
+        "Self-supervised learning and pattern recognition"
+      ],
+      "pdfUrl": "/curriculum/module-3.pdf"
+    },
+    {
+      "id": "4",
+      "title": "Deep Learning & Neural Networks",
+      "duration": "5 hours",
+      "description": "Simplify how neural systems power modern AI and dig deeper into their structure.",
+      "professionalConcepts": "Neural network architectures, layer types and functions, CNNs for vision, RNNs for sequences, Transformers for language, attention mechanisms, and deep learning challenges.",
+      "advancedIntegration": "Activation functions and gradient flow, attention heads and positional encoding, explainable AI techniques (LIME, SHAP, Grad-CAM), and optimization methods.",
+      "topics": [
+        "Human Brain vs Artificial Neurons",
+        "Layers (Input, Hidden, Output)",
+        "CNNs, RNNs, Transformers — and why they matter",
+        "Attention Mechanism and Context Understanding",
+        "Deep Learning Challenges",
+        "Activation functions and gradient flow",
+        "Attention heads and positional encoding in Transformers",
+        "Explainable AI (XAI): LIME, SHAP, Grad-CAM",
+        "Optimization techniques (Adam, ReLU, GELU)"
+      ],
+      "pdfUrl": "/curriculum/module-4.pdf"
+    },
+    {
+      "id": "5",
+      "title": "Generative AI – Theory, Architectures & Creativity",
+      "duration": "5 hours",
+      "description": "Decode the generative mechanisms that let AI create new content.",
+      "professionalConcepts": "Generative AI fundamentals, core architectures (GANs, VAEs, Diffusion, LLMs), tokenization and context windows, creativity control parameters, and real-world generative tools.",
+      "advancedIntegration": "Probability sampling and latent space exploration, model fine-tuning ethics, prompt compression techniques, and understanding creativity boundaries in AI systems.",
+      "topics": [
+        "What is Generative AI?",
+        "Core Architectures: GANs, VAEs, Diffusion, LLMs",
+        "Tokenization and Context Windows",
+        "Temperature & Top-p for Creativity Control",
+        "Real-World Generative Tools (ChatGPT, MidJourney, Suno, Claude, Gemini)",
+        "Probability sampling and latent space",
+        "Model fine-tuning, personalization, and data leakage ethics",
+        "Prompt compression and interpretive ambiguity",
+        "Generative probabilities & model creativity limits"
+      ],
+      "pdfUrl": "/curriculum/module-5.pdf"
+    },
+    {
+      "id": "6",
+      "title": "Multimodal AI Systems & Tool Integration",
+      "duration": "4 hours",
+      "description": "Learn how GenAI combines text, visuals, audio, and video.",
+      "professionalConcepts": "Cross-modal generation (text-to-image, text-to-audio, text-to-video), integration tools and platforms, API workflows, and end-to-end content creation pipelines.",
+      "advancedIntegration": "Multimodal model architectures, RAG (Retrieval-Augmented Generation) systems, performance optimization and latency management, API security and fairness considerations.",
+      "topics": [
+        "Text → Text (LLMs), Text → Image (Diffusion), Text → Audio/Video",
+        "Integration Tools: ChatGPT, Runway, MidJourney, ElevenLabs, Gemini",
+        "Using APIs & Automation Tools",
+        "Cross-tool Workflows: From Idea → Script → Design → Video",
+        "Architecture of multimodal models",
+        "RAG (Retrieval-Augmented Generation) explained",
+        "Latency, context memory, and performance trade-offs",
+        "API governance, security, and fairness concerns"
+      ],
+      "pdfUrl": "/curriculum/module-6.pdf"
+    },
+    {
+      "id": "7",
+      "title": "AI Strategy, Business Innovation & Transformation",
+      "duration": "4 hours",
+      "description": "Learn how organizations deploy, measure, and scale AI responsibly.",
+      "professionalConcepts": "AI applications across industries, ROI measurement and KPIs, human-AI collaboration workflows, building AI-ready teams, and managing organizational change.",
+      "advancedIntegration": "AI maturity frameworks, governance boards and ethical decision processes, economic impact analysis, and AI in Industry 5.0 human-centered automation.",
+      "topics": [
+        "AI in Business: Marketing, Healthcare, Finance, Education, Manufacturing",
+        "AI ROI and KPI Measurement",
+        "Human-AI Collaboration Workflows",
+        "Building AI-Ready Teams",
+        "Change Management and Communication",
+        "AI Maturity Frameworks (Deloitte, Accenture)",
+        "AI Governance Boards and Ethical Decision Loops",
+        "Economic impact of AI transformation",
+        "AI in Industry 5.0 (Human-Centered Automation)"
+      ],
+      "pdfUrl": "/curriculum/module-7.pdf"
+    },
+    {
+      "id": "8",
+      "title": "Ethics, Risks, and Global Governance",
+      "duration": "4 hours",
+      "description": "Develop deep ethical awareness and governance thinking.",
+      "professionalConcepts": "Core AI ethics (bias, fairness, transparency, privacy), deepfakes and disinformation challenges, intellectual property considerations, and responsible AI principles.",
+      "advancedIntegration": "Global regulatory frameworks (EU AI Act, DPDP, US AI Bill of Rights), algorithmic accountability and AI audits, environmental impact, and the alignment problem.",
+      "topics": [
+        "AI Ethics 101: Bias, Fairness, Transparency, Privacy",
+        "Deepfakes and Disinformation",
+        "IP and Copyright in AI-Generated Work",
+        "Responsible AI Principles (Google, Microsoft, OECD)",
+        "Global AI Laws: EU AI Act, India's DPDP, U.S. AI Bill of Rights",
+        "Algorithmic Accountability and AI Audits",
+        "Environmental Cost of AI",
+        "The Alignment Problem and Moral Machines"
+      ],
+      "pdfUrl": "/curriculum/module-8.pdf"
+    },
+    {
+      "id": "9",
+      "title": "Human–AI Collaboration and Future Leadership",
+      "duration": "3 hours",
+      "description": "Prepare for the coming era of augmented intelligence.",
+      "professionalConcepts": "Human-in-the-loop systems, AI for creativity and decision-making, AI literacy for different roles, and reskilling frameworks for the AI economy.",
+      "advancedIntegration": "Affective computing and emotional AI, synthetic labor and digital twins, philosophy of human-AI coexistence, and leadership ethics in algorithmic governance.",
+      "topics": [
+        "AI as a Partner – Human in the Loop Systems",
+        "AI for Creativity, Decision-Making, and Problem Solving",
+        "AI Literacy for Educators, Executives, and Policymakers",
+        "Reskilling Frameworks for the AI Economy",
+        "AI Emotional Intelligence and affective computing",
+        "Synthetic labor and digital twins",
+        "The Philosophy of Coexistence: Human Uniqueness in the AI Age",
+        "Leadership Ethics in Algorithmic Systems"
+      ],
+      "pdfUrl": "/curriculum/module-9.pdf"
+    }
+  ]
+}
