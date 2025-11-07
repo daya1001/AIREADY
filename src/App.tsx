@@ -2971,8 +2971,8 @@ function App() {
     <AuthContext.Provider value={{ currentUser, setCurrentUser }}>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/page-2" element={<Home2Page />} />
+          <Route path="/" element={<Home2Page />} />
+          <Route path="/page-1" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
