@@ -6,13 +6,16 @@ import {
   Quote, Linkedin, ChevronDown
 } from 'lucide-react';
 
-// Home2 Page Component - New Design
+// Home2 Page Component - New Design with Purple/Pink Gradient Theme
 export function Home2Page() {
   const navigate = useNavigate();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [activePathTab, setActivePathTab] = useState<number>(0);
   const [openModule, setOpenModule] = useState<number | null>(null);
   const [faqCategory, setFaqCategory] = useState<number>(0);
+
+  // Log to confirm component is rendering
+  console.log('Home2Page component rendered');
 
   const toggleModule = (index: number) => {
     setOpenModule(openModule === index ? null : index);
