@@ -22,6 +22,8 @@ export default function Login({ onLogin, onClose }: LoginProps) {
     try {
       const user = await authService.login(email, password);
 
+      console.log('user=====', user);
+
       if (user) {
         onLogin(user);
       } else {

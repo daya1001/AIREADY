@@ -18,7 +18,13 @@ async function seed() {
         id: permission.id,
         name: permission.name,
         description: permission.description,
-      }).onConflictDoNothing();
+      }).onConflictDoUpdate({
+        target: permissions.id,
+        set: {
+          name: permission.name,
+          description: permission.description,
+        },
+      });
     }
 
     // 2. Seed Roles
@@ -42,7 +48,7 @@ async function seed() {
         description: track.description,
         color: track.color,
         icon: track.icon,
-        duration: track.duration,
+        duration: track.validity,
         price: track.price,
         passingScore: track.passingScore,
         modules: track.modules,
@@ -61,9 +67,7 @@ async function seed() {
         title: module.title,
         description: module.description,
         duration: module.duration,
-        difficulty: module.difficulty,
         topics: module.topics,
-        videoUrl: module.videoUrl,
         pdfUrl: module.pdfUrl,
       }).onConflictDoNothing();
     }
@@ -74,7 +78,6 @@ async function seed() {
       await db.insert(mockTests).values({
         id: test.id,
         title: test.title,
-        description: test.description,
         duration: test.duration,
         totalQuestions: test.totalQuestions,
         passingScore: test.passingScore,

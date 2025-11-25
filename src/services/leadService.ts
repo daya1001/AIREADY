@@ -11,15 +11,15 @@ export interface Lead {
   email: string;
   phone: string;
   organization: string;
-  address: string;
-  additionalInfo: string;
+  address: string | null;
+  additionalInfo: string | null;
   status: LeadStatus;
   createdDate: string;
   lastUpdated: string;
-  assignedTo?: string;
+  assignedTo: string | null;
   notes: string[];
-  estimatedValue?: number;
-  followUpDate?: string;
+  estimatedValue: number | null;
+  followUpDate: string | null;
 }
 
 export interface LeadNote {

@@ -1,6 +1,10 @@
-import { db } from '../db/config';
-import { users, roles, permissions, certificationTracks, modules, mockTests, courseProgress, mockTestResults, leads } from '../db/schema';
-import { eq, and, sql, or, like } from 'drizzle-orm';
+// import { db } from '../db/config';
+// import { users, roles, permissions, certificationTracks, modules, mockTests, courseProgress, mockTestResults, leads } from '../db/schema';
+// import { eq, and, sql, or, like } from 'drizzle-orm';
+import { LeadType, LeadStatus } from './leadService';
+import { User } from './authService'; // Import User interface
+
+const API_BASE_URL = '/api'; // Base URL for your API
 
 // ============================================
 // USER OPERATIONS
@@ -8,26 +12,30 @@ import { eq, and, sql, or, like } from 'drizzle-orm';
 
 export async function getAllUsers() {
   try {
-    const allUsers = await db.select().from(users);
-    return allUsers.map(user => ({
+    const response = await fetch(`${API_BASE_URL}/users`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const allUsers = await response.json();
+    return allUsers.map((user: User) => ({
       ...user,
       profile: {
-        phone: user.phone || '',
-        organization: user.organization || '',
-        designation: user.designation || '',
-        location: user.location || '',
-        joinedDate: user.joinedDate || '',
-        bio: user.bio || '',
-        photo: user.photo || '',
-        idDocument: user.idDocument || '',
-        verified: user.verified || false,
-        verifiedBy: user.verifiedBy || undefined,
-        verifiedDate: user.verifiedDate || undefined,
+        phone: user.profile?.phone || '',
+        organization: user.profile?.organization || '',
+        designation: user.profile?.designation || '',
+        location: user.profile?.location || '',
+        joinedDate: user.profile?.joinedDate || '',
+        bio: user.profile?.bio || '',
+        photo: user.profile?.photo || '',
+        idDocument: user.profile?.idDocument || '',
+        verified: user.profile?.verified || false,
+        verifiedBy: user.profile?.verifiedBy || undefined,
+        verifiedDate: user.profile?.verifiedDate || undefined,
       },
       enrollment: {
-        status: user.enrollmentStatus || 'active',
-        enrolledDate: user.enrolledDate || '',
-        expiryDate: user.expiryDate || '',
+        status: user.enrollment?.status || 'active',
+        enrolledDate: user.enrollment?.enrolledDate || '',
+        expiryDate: user.enrollment?.expiryDate || '',
       },
       adminRole: user.adminRole || undefined,
       certificationTrack: user.certificationTrack || undefined,
@@ -42,51 +50,17 @@ export async function getAllUsers() {
   }
 }
 
-export async function getUserByEmail(email: string) {
-  try {
-    const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
-    if (result.length === 0) return null;
-
-    const user = result[0];
-    return {
-      ...user,
-      profile: {
-        phone: user.phone || '',
-        organization: user.organization || '',
-        designation: user.designation || '',
-        location: user.location || '',
-        joinedDate: user.joinedDate || '',
-        bio: user.bio || '',
-        photo: user.photo || '',
-        idDocument: user.idDocument || '',
-        verified: user.verified || false,
-        verifiedBy: user.verifiedBy || undefined,
-        verifiedDate: user.verifiedDate || undefined,
-      },
-      enrollment: {
-        status: user.enrollmentStatus || 'active',
-        enrolledDate: user.enrolledDate || '',
-        expiryDate: user.expiryDate || '',
-      },
-      adminRole: user.adminRole || undefined,
-      certificationTrack: user.certificationTrack || undefined,
-      examStatus: user.examStatus || 'not_attempted',
-      remainingAttempts: user.remainingAttempts || 2,
-      credlyBadgeUrl: user.credlyBadgeUrl || undefined,
-      certificateNumber: user.certificateNumber || undefined,
-    };
-  } catch (error) {
-    console.error('Error fetching user by email:', error);
-    throw error;
-  }
-}
+// Removed getUserByEmail and authenticateUser, now in src/server/controllers/authController.ts
 
 export async function getUserById(userId: number) {
   try {
-    const result = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-    if (result.length === 0) return null;
+    const response = await fetch(`${API_BASE_URL}/users/${userId}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const user = await response.json();
+    if (!user) return null;
 
-    const user = result[0];
     return {
       ...user,
       profile: {
@@ -139,26 +113,15 @@ export async function createUser(userData: {
   expiryDate?: string;
 }) {
   try {
-    const result = await db.insert(users).values({
-      name: userData.name,
-      email: userData.email,
-      password: userData.password,
-      role: userData.role,
-      adminRole: userData.adminRole,
-      certificationTrack: userData.certificationTrack,
-      phone: userData.phone,
-      organization: userData.organization,
-      designation: userData.designation,
-      location: userData.location,
-      joinedDate: userData.joinedDate,
-      bio: userData.bio,
-      photo: userData.photo,
-      enrollmentStatus: userData.enrollmentStatus || 'active',
-      enrolledDate: userData.enrolledDate,
-      expiryDate: userData.expiryDate,
-    }).returning();
-
-    return result[0];
+    const response = await fetch(`${API_BASE_URL}/users`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userData),
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
   } catch (error) {
     console.error('Error creating user:', error);
     throw error;
@@ -197,12 +160,15 @@ export async function updateUser(userId: number, updates: Partial<{
   expiryNotificationSent: boolean;
 }>) {
   try {
-    const result = await db.update(users)
-      .set({ ...updates, updatedAt: new Date() })
-      .where(eq(users.id, userId))
-      .returning();
-
-    return result[0];
+    const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
   } catch (error) {
     console.error('Error updating user:', error);
     throw error;
@@ -211,14 +177,13 @@ export async function updateUser(userId: number, updates: Partial<{
 
 export async function deleteUser(userId: number) {
   try {
-    // Delete related records first
-    await db.delete(courseProgress).where(eq(courseProgress.userId, userId));
-    await db.delete(mockTestResults).where(eq(mockTestResults.userId, userId));
-
-    // Delete user
-    await db.delete(users).where(eq(users.id, userId));
-
-    return true;
+    const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.ok;
   } catch (error) {
     console.error('Error deleting user:', error);
     throw error;
@@ -231,8 +196,11 @@ export async function deleteUser(userId: number) {
 
 export async function getUserCourseProgress(userId: number) {
   try {
-    const progress = await db.select().from(courseProgress).where(eq(courseProgress.userId, userId));
-    return progress;
+    const response = await fetch(`${API_BASE_URL}/users/${userId}/course-progress`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
   } catch (error) {
     console.error('Error fetching course progress:', error);
     throw error;
@@ -245,43 +213,15 @@ export async function updateCourseProgress(userId: number, moduleId: string, pro
   overallProgress: number;
 }) {
   try {
-    // Check if progress record exists
-    const existing = await db.select()
-      .from(courseProgress)
-      .where(and(
-        eq(courseProgress.userId, userId),
-        eq(courseProgress.moduleId, moduleId)
-      ))
-      .limit(1);
-
-    if (existing.length > 0) {
-      // Update existing record
-      const result = await db.update(courseProgress)
-        .set({
-          progress: progressData.progress,
-          status: progressData.status,
-          overallProgress: progressData.overallProgress,
-          updatedAt: new Date(),
-        })
-        .where(and(
-          eq(courseProgress.userId, userId),
-          eq(courseProgress.moduleId, moduleId)
-        ))
-        .returning();
-
-      return result[0];
-    } else {
-      // Create new record
-      const result = await db.insert(courseProgress).values({
-        userId,
-        moduleId,
-        progress: progressData.progress,
-        status: progressData.status,
-        overallProgress: progressData.overallProgress,
-      }).returning();
-
-      return result[0];
+    const response = await fetch(`${API_BASE_URL}/users/${userId}/course-progress/${moduleId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(progressData),
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
+    return await response.json();
   } catch (error) {
     console.error('Error updating course progress:', error);
     throw error;
@@ -294,10 +234,14 @@ export async function updateCourseProgress(userId: number, moduleId: string, pro
 
 export async function getAllMockTests() {
   try {
-    const tests = await db.select().from(mockTests);
-    return tests.map(test => ({
+    const response = await fetch(`${API_BASE_URL}/mock-tests`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const tests = await response.json();
+    return tests.map((test: any) => ({
       ...test,
-      questions: test.questions as any[], // Parse JSONB
+      questions: test.questions as any[],
     }));
   } catch (error) {
     console.error('Error fetching mock tests:', error);
@@ -307,12 +251,15 @@ export async function getAllMockTests() {
 
 export async function getMockTestById(testId: string) {
   try {
-    const result = await db.select().from(mockTests).where(eq(mockTests.id, testId)).limit(1);
-    if (result.length === 0) return null;
-
+    const response = await fetch(`${API_BASE_URL}/mock-tests/${testId}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const test = await response.json();
+    if (!test) return null;
     return {
-      ...result[0],
-      questions: result[0].questions as any[],
+      ...test,
+      questions: test.questions as any[],
     };
   } catch (error) {
     console.error('Error fetching mock test:', error);
@@ -322,8 +269,11 @@ export async function getMockTestById(testId: string) {
 
 export async function getUserMockTestResults(userId: number) {
   try {
-    const results = await db.select().from(mockTestResults).where(eq(mockTestResults.userId, userId));
-    return results;
+    const response = await fetch(`${API_BASE_URL}/users/${userId}/mock-tests`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
   } catch (error) {
     console.error('Error fetching mock test results:', error);
     throw error;
@@ -332,44 +282,15 @@ export async function getUserMockTestResults(userId: number) {
 
 export async function saveMockTestResult(userId: number, testId: string, score: number, completed: boolean, answers?: any) {
   try {
-    // Check if a result already exists for this user and test
-    const existing = await db.select()
-      .from(mockTestResults)
-      .where(and(
-        eq(mockTestResults.userId, userId),
-        eq(mockTestResults.testId, testId)
-      ))
-      .limit(1);
-
-    if (existing.length > 0) {
-      // Update existing record
-      const result = await db.update(mockTestResults)
-        .set({
-          score,
-          completed,
-          completedAt: completed ? new Date() : null,
-          answers: answers || null,
-        })
-        .where(and(
-          eq(mockTestResults.userId, userId),
-          eq(mockTestResults.testId, testId)
-        ))
-        .returning();
-
-      return result[0];
-    } else {
-      // Create new record
-      const result = await db.insert(mockTestResults).values({
-        userId,
-        testId,
-        score,
-        completed,
-        completedAt: completed ? new Date() : null,
-        answers: answers || null,
-      }).returning();
-
-      return result[0];
+    const response = await fetch(`${API_BASE_URL}/users/${userId}/mock-tests/${testId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ score, completed, answers }),
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
+    return await response.json();
   } catch (error) {
     console.error('Error saving mock test result:', error);
     throw error;
@@ -382,10 +303,14 @@ export async function saveMockTestResult(userId: number, testId: string, score: 
 
 export async function getAllRoles() {
   try {
-    const allRoles = await db.select().from(roles);
-    return allRoles.map(role => ({
+    const response = await fetch(`${API_BASE_URL}/roles`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const allRoles = await response.json();
+    return allRoles.map((role: any) => ({
       ...role,
-      permissions: role.permissions as string[], // Parse JSONB
+      permissions: role.permissions as string[],
     }));
   } catch (error) {
     console.error('Error fetching roles:', error);
@@ -395,7 +320,11 @@ export async function getAllRoles() {
 
 export async function getAllPermissions() {
   try {
-    return await db.select().from(permissions);
+    const response = await fetch(`${API_BASE_URL}/permissions`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
   } catch (error) {
     console.error('Error fetching permissions:', error);
     throw error;
@@ -404,12 +333,15 @@ export async function getAllPermissions() {
 
 export async function getRoleById(roleId: string) {
   try {
-    const result = await db.select().from(roles).where(eq(roles.id, roleId)).limit(1);
-    if (result.length === 0) return null;
-
+    const response = await fetch(`${API_BASE_URL}/roles/${roleId}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const role = await response.json();
+    if (!role) return null;
     return {
-      ...result[0],
-      permissions: result[0].permissions as string[],
+      ...role,
+      permissions: role.permissions as string[],
     };
   } catch (error) {
     console.error('Error fetching role:', error);
@@ -423,11 +355,15 @@ export async function getRoleById(roleId: string) {
 
 export async function getAllCertificationTracks() {
   try {
-    const tracks = await db.select().from(certificationTracks).where(eq(certificationTracks.active, true));
-    return tracks.map(track => ({
+    const response = await fetch(`${API_BASE_URL}/certification-tracks`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const tracks = await response.json();
+    return tracks.map((track: any) => ({
       ...track,
-      modules: track.modules as string[], // Parse JSONB
-      competencies: track.competencies as string[], // Parse JSONB
+      modules: track.modules as string[],
+      competencies: track.competencies as string[],
     }));
   } catch (error) {
     console.error('Error fetching certification tracks:', error);
@@ -437,13 +373,16 @@ export async function getAllCertificationTracks() {
 
 export async function getCertificationTrackById(trackId: string) {
   try {
-    const result = await db.select().from(certificationTracks).where(eq(certificationTracks.id, trackId)).limit(1);
-    if (result.length === 0) return null;
-
+    const response = await fetch(`${API_BASE_URL}/certification-tracks/${trackId}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const track = await response.json();
+    if (!track) return null;
     return {
-      ...result[0],
-      modules: result[0].modules as string[],
-      competencies: result[0].competencies as string[],
+      ...track,
+      modules: track.modules as string[],
+      competencies: track.competencies as string[],
     };
   } catch (error) {
     console.error('Error fetching certification track:', error);
@@ -457,10 +396,14 @@ export async function getCertificationTrackById(trackId: string) {
 
 export async function getAllModules() {
   try {
-    const allModules = await db.select().from(modules);
-    return allModules.map(module => ({
+    const response = await fetch(`${API_BASE_URL}/modules`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const allModules = await response.json();
+    return allModules.map((module: any) => ({
       ...module,
-      topics: module.topics as string[], // Parse JSONB
+      topics: module.topics as string[],
     }));
   } catch (error) {
     console.error('Error fetching modules:', error);
@@ -470,12 +413,15 @@ export async function getAllModules() {
 
 export async function getModuleById(moduleId: string) {
   try {
-    const result = await db.select().from(modules).where(eq(modules.id, moduleId)).limit(1);
-    if (result.length === 0) return null;
-
+    const response = await fetch(`${API_BASE_URL}/modules/${moduleId}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const module = await response.json();
+    if (!module) return null;
     return {
-      ...result[0],
-      topics: result[0].topics as string[],
+      ...module,
+      topics: module.topics as string[],
     };
   } catch (error) {
     console.error('Error fetching module:', error);
@@ -487,22 +433,7 @@ export async function getModuleById(moduleId: string) {
 // AUTHENTICATION
 // ============================================
 
-export async function authenticateUser(email: string, password: string) {
-  try {
-    const user = await getUserByEmail(email);
-    if (!user) return null;
-
-    // In production, you should use proper password hashing (bcrypt, etc.)
-    if (user.password === password) {
-      return user;
-    }
-
-    return null;
-  } catch (error) {
-    console.error('Error authenticating user:', error);
-    throw error;
-  }
-}
+// Removed authenticateUser, now in src/server/controllers/authController.ts
 
 // ============================================
 // LEADS OPERATIONS
@@ -510,10 +441,16 @@ export async function authenticateUser(email: string, password: string) {
 
 export async function getAllLeads() {
   try {
-    const allLeads = await db.select().from(leads).orderBy(sql`${leads.createdAt} DESC`);
-    return allLeads.map(lead => ({
+    const response = await fetch(`${API_BASE_URL}/leads`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const allLeads = await response.json();
+    return allLeads.map((lead: any) => ({
       ...lead,
       id: String(lead.id),
+      type: lead.type as LeadType,
+      status: lead.status as LeadStatus,
       notes: (lead.notes as string[]) || [],
       createdDate: lead.createdAt?.toISOString() || new Date().toISOString(),
       lastUpdated: lead.updatedAt?.toISOString() || new Date().toISOString(),
@@ -526,13 +463,17 @@ export async function getAllLeads() {
 
 export async function getLeadById(leadId: number) {
   try {
-    const result = await db.select().from(leads).where(eq(leads.id, leadId)).limit(1);
-    if (result.length === 0) return null;
-
-    const lead = result[0];
+    const response = await fetch(`${API_BASE_URL}/leads/${leadId}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const lead = await response.json();
+    if (!lead) return null;
     return {
       ...lead,
       id: String(lead.id),
+      type: lead.type as LeadType,
+      status: lead.status as LeadStatus,
       notes: (lead.notes as string[]) || [],
       createdDate: lead.createdAt?.toISOString() || new Date().toISOString(),
       lastUpdated: lead.updatedAt?.toISOString() || new Date().toISOString(),
@@ -544,38 +485,33 @@ export async function getLeadById(leadId: number) {
 }
 
 export async function createLead(leadData: {
-  type: string;
+  type: LeadType;
   name: string;
   email: string;
   phone: string;
   organization: string;
-  address?: string;
-  additionalInfo?: string;
-  status?: string;
-  assignedTo?: string;
-  estimatedValue?: number;
-  followUpDate?: string;
+  address: string | null;
+  additionalInfo: string | null;
+  status: LeadStatus;
+  assignedTo: string | null;
+  estimatedValue: number | null;
+  followUpDate: string | null;
 }) {
   try {
-    const result = await db.insert(leads).values({
-      type: leadData.type,
-      name: leadData.name,
-      email: leadData.email,
-      phone: leadData.phone,
-      organization: leadData.organization,
-      address: leadData.address || '',
-      additionalInfo: leadData.additionalInfo || '',
-      status: leadData.status || 'new',
-      assignedTo: leadData.assignedTo,
-      notes: [],
-      estimatedValue: leadData.estimatedValue,
-      followUpDate: leadData.followUpDate,
-    }).returning();
-
-    const lead = result[0];
+    const response = await fetch(`${API_BASE_URL}/leads`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(leadData),
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const lead = await response.json();
     return {
       ...lead,
       id: String(lead.id),
+      type: lead.type as LeadType,
+      status: lead.status as LeadStatus,
       notes: (lead.notes as string[]) || [],
       createdDate: lead.createdAt?.toISOString() || new Date().toISOString(),
       lastUpdated: lead.updatedAt?.toISOString() || new Date().toISOString(),
@@ -587,30 +523,34 @@ export async function createLead(leadData: {
 }
 
 export async function updateLead(leadId: number, updates: Partial<{
-  type: string;
+  type: LeadType;
   name: string;
   email: string;
   phone: string;
   organization: string;
-  address: string;
-  additionalInfo: string;
-  status: string;
-  assignedTo: string;
-  estimatedValue: number;
-  followUpDate: string;
+  address: string | null;
+  additionalInfo: string | null;
+  status: LeadStatus;
+  assignedTo: string | null;
+  estimatedValue: number | null;
+  followUpDate: string | null;
 }>) {
   try {
-    const result = await db.update(leads)
-      .set({ ...updates, updatedAt: new Date() })
-      .where(eq(leads.id, leadId))
-      .returning();
-
-    if (result.length === 0) return null;
-
-    const lead = result[0];
+    const response = await fetch(`${API_BASE_URL}/leads/${leadId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const lead = await response.json();
+    if (!lead) return null;
     return {
       ...lead,
       id: String(lead.id),
+      type: lead.type as LeadType,
+      status: lead.status as LeadStatus,
       notes: (lead.notes as string[]) || [],
       createdDate: lead.createdAt?.toISOString() || new Date().toISOString(),
       lastUpdated: lead.updatedAt?.toISOString() || new Date().toISOString(),
@@ -623,28 +563,21 @@ export async function updateLead(leadId: number, updates: Partial<{
 
 export async function updateLeadStatus(leadId: number, status: string, updatedBy: string) {
   try {
-    // Get current lead to update notes
-    const currentLead = await getLeadById(leadId);
-    if (!currentLead) return null;
-
-    const newNote = `Status changed to "${status}" by ${updatedBy} on ${new Date().toLocaleString()}`;
-    const updatedNotes = [...currentLead.notes, newNote];
-
-    const result = await db.update(leads)
-      .set({
-        status,
-        notes: updatedNotes,
-        updatedAt: new Date(),
-      })
-      .where(eq(leads.id, leadId))
-      .returning();
-
-    if (result.length === 0) return null;
-
-    const lead = result[0];
+    const response = await fetch(`${API_BASE_URL}/leads/${leadId}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status, updatedBy }),
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const lead = await response.json();
+    if (!lead) return null;
     return {
       ...lead,
       id: String(lead.id),
+      type: lead.type as LeadType,
+      status: lead.status as LeadStatus,
       notes: (lead.notes as string[]) || [],
       createdDate: lead.createdAt?.toISOString() || new Date().toISOString(),
       lastUpdated: lead.updatedAt?.toISOString() || new Date().toISOString(),
@@ -657,27 +590,21 @@ export async function updateLeadStatus(leadId: number, status: string, updatedBy
 
 export async function addLeadNote(leadId: number, note: string, createdBy: string) {
   try {
-    // Get current lead to update notes
-    const currentLead = await getLeadById(leadId);
-    if (!currentLead) return null;
-
-    const noteText = `[${new Date().toLocaleString()}] ${createdBy}: ${note}`;
-    const updatedNotes = [...currentLead.notes, noteText];
-
-    const result = await db.update(leads)
-      .set({
-        notes: updatedNotes,
-        updatedAt: new Date(),
-      })
-      .where(eq(leads.id, leadId))
-      .returning();
-
-    if (result.length === 0) return null;
-
-    const lead = result[0];
+    const response = await fetch(`${API_BASE_URL}/leads/${leadId}/notes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ note, createdBy }),
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const lead = await response.json();
+    if (!lead) return null;
     return {
       ...lead,
       id: String(lead.id),
+      type: lead.type as LeadType,
+      status: lead.status as LeadStatus,
       notes: (lead.notes as string[]) || [],
       createdDate: lead.createdAt?.toISOString() || new Date().toISOString(),
       lastUpdated: lead.updatedAt?.toISOString() || new Date().toISOString(),
@@ -690,8 +617,13 @@ export async function addLeadNote(leadId: number, note: string, createdBy: strin
 
 export async function deleteLead(leadId: number) {
   try {
-    await db.delete(leads).where(eq(leads.id, leadId));
-    return true;
+    const response = await fetch(`${API_BASE_URL}/leads/${leadId}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.ok;
   } catch (error) {
     console.error('Error deleting lead:', error);
     throw error;
@@ -700,22 +632,16 @@ export async function deleteLead(leadId: number) {
 
 export async function searchLeads(query: string) {
   try {
-    const lowerQuery = `%${query.toLowerCase()}%`;
-    const results = await db.select()
-      .from(leads)
-      .where(
-        or(
-          like(sql`LOWER(${leads.name})`, lowerQuery),
-          like(sql`LOWER(${leads.email})`, lowerQuery),
-          like(sql`LOWER(${leads.organization})`, lowerQuery),
-          like(leads.phone, `%${query}%`)
-        )
-      )
-      .orderBy(sql`${leads.createdAt} DESC`);
-
-    return results.map(lead => ({
+    const response = await fetch(`${API_BASE_URL}/leads/search?q=${encodeURIComponent(query)}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const results = await response.json();
+    return results.map((lead: any) => ({
       ...lead,
       id: String(lead.id),
+      type: lead.type as LeadType,
+      status: lead.status as LeadStatus,
       notes: (lead.notes as string[]) || [],
       createdDate: lead.createdAt?.toISOString() || new Date().toISOString(),
       lastUpdated: lead.updatedAt?.toISOString() || new Date().toISOString(),
@@ -728,22 +654,11 @@ export async function searchLeads(query: string) {
 
 export async function getLeadStats() {
   try {
-    const allLeads = await db.select().from(leads);
-
-    return {
-      total: allLeads.length,
-      new: allLeads.filter(l => l.status === 'new').length,
-      contacted: allLeads.filter(l => l.status === 'contacted').length,
-      qualified: allLeads.filter(l => l.status === 'qualified').length,
-      negotiation: allLeads.filter(l => l.status === 'negotiation').length,
-      converted: allLeads.filter(l => l.status === 'converted').length,
-      lost: allLeads.filter(l => l.status === 'lost').length,
-      byType: {
-        university: allLeads.filter(l => l.type === 'university').length,
-        school: allLeads.filter(l => l.type === 'school').length,
-        organization: allLeads.filter(l => l.type === 'organization').length,
-      }
-    };
+    const response = await fetch(`${API_BASE_URL}/leads/stats`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
   } catch (error) {
     console.error('Error getting lead stats:', error);
     throw error;

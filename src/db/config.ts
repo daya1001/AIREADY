@@ -1,6 +1,8 @@
-import { neon } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from './schema';
+import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import { NeonHttpDatabase } from 'drizzle-orm/neon-http';
+
+type AnyDrizzleDb = PostgresJsDatabase<typeof schema> | NeonHttpDatabase<typeof schema>;
 
 // Get database URL from environment variable
 // In Vite (browser), use import.meta.env
@@ -23,8 +25,30 @@ if (!databaseUrl) {
 
 console.log('✅ Database URL configured');
 
-// Create Neon connection
-const sql = neon(databaseUrl);
+let db: AnyDrizzleDb;
 
-// Create Drizzle instance
-export const db = drizzle(sql, { schema });
+// Check if running in a Node.js environment (where `process` is defined)
+if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+  // Node.js environment - use pg driver for local development
+  if (databaseUrl.includes('localhost')) {
+    const { Client } = await import('pg');
+    const { drizzle } = await import('drizzle-orm/node-postgres');
+    const client = new Client(databaseUrl);
+    await client.connect();
+    db = drizzle(client, { schema });
+  } else {
+    // Node.js environment, but connecting to a remote Neon database
+    const { neon } = await import('@neondatabase/serverless');
+    const { drizzle } = await import('drizzle-orm/neon-http');
+    const sql = neon(databaseUrl);
+    db = drizzle(sql, { schema });
+  }
+} else {
+  // Browser environment - always use Neon driver
+  const { neon } = await import('@neondatabase/serverless');
+  const { drizzle } = await import('drizzle-orm/neon-http');
+  const sql = neon(databaseUrl);
+  db = drizzle(sql, { schema });
+}
+
+export { db };

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, BookOpen, FileText, Award, TrendingUp, Settings, LogOut, User as UserIcon, CheckCircle, XCircle, Clock, Search, Plus, BarChart3, Mail, Shield, UserCheck, Trash2, Building2, UserCog } from 'lucide-react';
+import { Users, BookOpen, FileText, Award, TrendingUp, Settings, LogOut, User as UserIcon, CheckCircle, XCircle, Clock, Search, Plus, Mail, Shield, Trash2, Building2, UserCog } from 'lucide-react';
 import { User } from '../services/authService';
 import { authService } from '../services/authService';
 import { getAllUsers, getAllModules, getAllMockTests, getAllRoles, getAllCertificationTracks, createUser, deleteUser, updateUser } from '../services/database';
@@ -56,13 +56,11 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
   const [mockTests, setMockTests] = useState<any[]>([]);
   const [roles, setRoles] = useState<any[]>([]);
   const [certificationTracks, setCertificationTracks] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Load all data from database
     const loadData = async () => {
       try {
-        setIsLoading(true);
         const [usersData, modulesData, testsData, rolesData, tracksData] = await Promise.all([
           getAllUsers(),
           getAllModules(),
@@ -79,7 +77,6 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
       } catch (error) {
         console.error('Error loading data:', error);
       } finally {
-        setIsLoading(false);
       }
     };
 
@@ -111,7 +108,6 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
       await updateUser(parseInt(updatedUser.id), {
         name: updatedUser.name,
         email: updatedUser.email,
-        password: updatedUser.password,
         phone: updatedUser.profile.phone || null,
         organization: updatedUser.profile.organization || null,
         designation: updatedUser.profile.designation || null,
@@ -187,7 +183,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
         photo: `https://api.dicebear.com/7.x/avataaars/svg?seed=${newAdmin.name}`,
         enrollmentStatus: 'admin',
         enrolledDate: enrollmentDate,
-        expiryDate: null
+        expiryDate: undefined
       });
 
       alert(`Admin user "${newAdmin.name}" created successfully!\n\nEmail: ${newAdmin.email}\nRole: ${selectedRole?.name}\n\nThey can now log in with their credentials.`);
@@ -228,7 +224,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
       const expiryDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // 1 year from now
 
       // Create user in database
-      const createdUser = await createUser({
+      await createUser({
         name: newUser.name,
         email: newUser.email,
         password: newUser.password,
@@ -284,160 +280,6 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
         console.error('Error deleting user:', error);
         alert('Error deleting user. Please try again.');
       }
-    }
-  };
-
-  const handleQuickSetup = async () => {
-    if (!confirm('This will add 5 sample users and 2 sample admins to your database.\n\nProceed?')) {
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      const enrollmentDate = new Date().toISOString().split('T')[0];
-      const expiryDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
-      // Sample users
-      const sampleUsers = [
-        {
-          name: 'Rahul Sharma',
-          email: 'rahul.sharma@example.com',
-          password: 'demo123',
-          certificationTrack: 'ai-technical',
-          organization: 'Tech Solutions India',
-          designation: 'Data Scientist',
-          location: 'Mumbai, India',
-          phone: '+91 98765 43210'
-        },
-        {
-          name: 'Priya Patel',
-          email: 'priya.patel@example.com',
-          password: 'demo123',
-          certificationTrack: 'ai-business',
-          organization: 'Business Analytics Corp',
-          designation: 'Business Analyst',
-          location: 'Bangalore, India',
-          phone: '+91 98765 43211'
-        },
-        {
-          name: 'Amit Kumar',
-          email: 'amit.kumar@example.com',
-          password: 'demo123',
-          certificationTrack: 'ai-technical',
-          organization: 'StartupHub',
-          designation: 'ML Engineer',
-          location: 'Delhi, India',
-          phone: '+91 98765 43212'
-        },
-        {
-          name: 'Sneha Reddy',
-          email: 'sneha.reddy@example.com',
-          password: 'demo123',
-          certificationTrack: 'ai-marketing',
-          organization: 'Digital Marketing Pro',
-          designation: 'Marketing Manager',
-          location: 'Hyderabad, India',
-          phone: '+91 98765 43213'
-        },
-        {
-          name: 'Vikram Singh',
-          email: 'vikram.singh@example.com',
-          password: 'demo123',
-          certificationTrack: 'ai-healthcare',
-          organization: 'HealthTech Solutions',
-          designation: 'Healthcare Analyst',
-          location: 'Pune, India',
-          phone: '+91 98765 43214'
-        }
-      ];
-
-      // Create sample users
-      for (const sampleUser of sampleUsers) {
-        const track = certificationTracks.find(t => t.id === sampleUser.certificationTrack);
-        await createUser({
-          name: sampleUser.name,
-          email: sampleUser.email,
-          password: sampleUser.password,
-          role: 'user',
-          certificationTrack: sampleUser.certificationTrack,
-          phone: sampleUser.phone,
-          organization: sampleUser.organization,
-          designation: sampleUser.designation,
-          location: sampleUser.location,
-          joinedDate: enrollmentDate,
-          bio: `Enrolled in ${track?.name} certification program.`,
-          photo: `https://api.dicebear.com/7.x/avataaars/svg?seed=${sampleUser.name}`,
-          enrollmentStatus: 'active',
-          enrolledDate: enrollmentDate,
-          expiryDate: expiryDate
-        });
-      }
-
-      // Sample admins
-      const sampleAdmins = [
-        {
-          name: 'Manager One',
-          email: 'manager1@example.com',
-          password: 'admin123',
-          adminRole: 'content_manager',
-          organization: 'Economic Times',
-          designation: 'Content Manager',
-          location: 'India',
-          phone: '+91 98765 43220'
-        },
-        {
-          name: 'Manager Two',
-          email: 'manager2@example.com',
-          password: 'admin123',
-          adminRole: 'enrollment_manager',
-          organization: 'Economic Times',
-          designation: 'Enrollment Manager',
-          location: 'India',
-          phone: '+91 98765 43221'
-        }
-      ];
-
-      // Create sample admins
-      for (const sampleAdmin of sampleAdmins) {
-        const selectedRole = roles.find(r => r.id === sampleAdmin.adminRole);
-        await createUser({
-          name: sampleAdmin.name,
-          email: sampleAdmin.email,
-          password: sampleAdmin.password,
-          role: 'admin',
-          adminRole: sampleAdmin.adminRole,
-          phone: sampleAdmin.phone,
-          organization: sampleAdmin.organization,
-          designation: sampleAdmin.designation,
-          location: sampleAdmin.location,
-          joinedDate: enrollmentDate,
-          bio: `Admin user with ${selectedRole?.name} role.`,
-          photo: `https://api.dicebear.com/7.x/avataaars/svg?seed=${sampleAdmin.name}`,
-          enrollmentStatus: 'admin',
-          enrolledDate: enrollmentDate,
-          expiryDate: null
-        });
-      }
-
-      // Reload all data
-      const usersData = await getAllUsers();
-      setAllUsers(usersData.filter((u: any) => u.role === 'user'));
-
-      alert('✅ Sample data created successfully!\n\n5 Users Created:\n' +
-        '• Rahul Sharma (AI Technical)\n' +
-        '• Priya Patel (AI Business)\n' +
-        '• Amit Kumar (AI Technical)\n' +
-        '• Sneha Reddy (AI Marketing)\n' +
-        '• Vikram Singh (AI Healthcare)\n\n' +
-        '2 Admins Created:\n' +
-        '• Manager One (Content Manager)\n' +
-        '• Manager Two (Enrollment Manager)\n\n' +
-        'All accounts use password: demo123 or admin123');
-    } catch (error) {
-      console.error('Error creating sample data:', error);
-      alert('Error creating sample data. Some entries may already exist.');
-    } finally {
-      setIsLoading(false);
     }
   };
 

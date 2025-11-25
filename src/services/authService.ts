@@ -1,10 +1,15 @@
-import { authenticateUser, getUserByEmail, getAllRoles, getUserCourseProgress, getUserMockTestResults } from './database';
+import { getAllRoles } from './database';
+import { InferSelectModel } from 'drizzle-orm';
+import { courseProgress as courseProgressSchema, mockTestResults as mockTestResultsSchema } from '../db/schema';
+
+type CourseProgressType = InferSelectModel<typeof courseProgressSchema>;
+type MockTestResultType = InferSelectModel<typeof mockTestResultsSchema>;
 
 interface User {
   id: string;
   name: string;
   email: string;
-  password: string;
+  // password: string; // Password should not be exposed to the frontend
   role: 'user' | 'admin' | 'institution';
   adminRole?: string;
   profile: {
@@ -40,7 +45,7 @@ interface User {
   mockTests: Array<{
     testId: string;
     score: number | null;
-    completed: boolean;
+    completed: boolean | null;
   }>;
   credlyBadgeUrl: string | null;
   certificateNumber: string | null;
@@ -105,7 +110,6 @@ class AuthService {
         id: institution.id,
         name: institution.name,
         email: institution.adminEmail,
-        password: institution.adminPassword,
         role: 'institution',
         institutionId: institution.id,
         institutionType: institution.type,
@@ -153,14 +157,32 @@ class AuthService {
         return institutionUser;
       }
 
-      // If not institution, check regular user/admin authentication
-      const dbUser = await authenticateUser(email, password);
+      //alert(2)
+      // If not institution, make a request to the backend for user/admin authentication
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-      if (!dbUser) return null;
+      const data = await response.json();
+
+     
+
+      if (!data.success || !data.user) {
+        return null;
+      }
+
+      const dbUser = data.user;
 
       // Load course progress and mock test results
-      const courseProgress = await getUserCourseProgress(dbUser.id);
-      const mockTestResults = await getUserMockTestResults(dbUser.id);
+      const courseProgressResponse = await (await fetch(`/api/auth/user/${dbUser.id}/course-progress`)).json();
+      const mockTestResultsResponse = await (await fetch(`/api/auth/user/${dbUser.id}/mock-tests`)).json();
+
+      const courseProgress: CourseProgressType[] = courseProgressResponse.progress || [];
+      const mockTestResults: MockTestResultType[] = mockTestResultsResponse.results || [];
 
       // Calculate overall progress from course progress records
       let overallProgress = 0;
@@ -174,26 +196,42 @@ class AuthService {
         id: String(dbUser.id),
         name: dbUser.name,
         email: dbUser.email,
-        password: dbUser.password,
+        // password: dbUser.password, // Password is not returned from backend
         role: dbUser.role as 'user' | 'admin',
         adminRole: dbUser.adminRole || undefined,
         certificationTrack: dbUser.certificationTrack || undefined,
-        profile: dbUser.profile,
-        enrollment: dbUser.enrollment,
+        profile: dbUser.profile || {
+          phone: '',
+          organization: '',
+          designation: '',
+          location: '',
+          joinedDate: '',
+          bio: '',
+          photo: null,
+          idDocument: null,
+          verified: false,
+          verifiedBy: null,
+          verifiedDate: null,
+        },
+        enrollment: dbUser.enrollment || {
+          status: 'active',
+          enrolledDate: '',
+          expiryDate: '',
+        },
         examStatus: dbUser.examStatus as 'not_attempted' | 'passed' | 'failed' | 'not_applicable',
         remainingAttempts: dbUser.remainingAttempts,
         courseProgress: {
           modules: courseProgress?.map(cp => ({
             moduleId: cp.moduleId,
-            progress: cp.progress,
-            status: cp.status,
+            progress: cp.progress === null ? 0 : cp.progress, // Handle null progress
+            status: cp.status === null ? 'not_started' : cp.status, // Handle null status
           })) || [],
           overallProgress: overallProgress,
         },
         mockTests: mockTestResults?.map(mt => ({
           testId: mt.testId,
           score: mt.score,
-          completed: mt.completed,
+          completed: mt.completed === null ? false : mt.completed, // Handle null completed
         })) || [],
         credlyBadgeUrl: dbUser.credlyBadgeUrl || null,
         certificateNumber: dbUser.certificateNumber || null,
@@ -201,6 +239,8 @@ class AuthService {
 
       // Store user session
       localStorage.setItem('currentUser', JSON.stringify(user));
+
+      console.log('====user=====', user);
       return user;
     } catch (error) {
       console.error('Login error:', error);
@@ -230,13 +270,22 @@ class AuthService {
         return currentUser;
       }
 
-      // Reload user data from database
-      const dbUser = await getUserByEmail(currentUser.email);
-      if (!dbUser) return null;
+      // Reload user data from database via API
+      const response = await fetch(`/api/auth/user-by-email?email=${currentUser.email}`);
+      const data = await response.json();
 
-      // Load fresh course progress and mock test results
-      const courseProgress = await getUserCourseProgress(dbUser.id);
-      const mockTestResults = await getUserMockTestResults(dbUser.id);
+      if (!data.success || !data.user) {
+        return null;
+      }
+
+      const dbUser = data.user;
+
+      // Load fresh course progress and mock test results via API
+      const courseProgressResponse = await (await fetch(`/api/auth/user/${dbUser.id}/course-progress`)).json();
+      const mockTestResultsResponse = await (await fetch(`/api/auth/user/${dbUser.id}/mock-tests`)).json();
+
+      const courseProgress: CourseProgressType[] = courseProgressResponse.progress || [];
+      const mockTestResults: MockTestResultType[] = mockTestResultsResponse.results || [];
 
       // Calculate overall progress
       let overallProgress = 0;
@@ -249,26 +298,42 @@ class AuthService {
         id: String(dbUser.id),
         name: dbUser.name,
         email: dbUser.email,
-        password: dbUser.password,
+        // password: dbUser.password, // Password is not returned from backend
         role: dbUser.role as 'user' | 'admin',
         adminRole: dbUser.adminRole || undefined,
         certificationTrack: dbUser.certificationTrack || undefined,
-        profile: dbUser.profile,
-        enrollment: dbUser.enrollment,
+        profile: dbUser.profile || {
+          phone: '',
+          organization: '',
+          designation: '',
+          location: '',
+          joinedDate: '',
+          bio: '',
+          photo: null,
+          idDocument: null,
+          verified: false,
+          verifiedBy: null,
+          verifiedDate: null,
+        },
+        enrollment: dbUser.enrollment || {
+          status: 'active',
+          enrolledDate: '',
+          expiryDate: '',
+        },
         examStatus: dbUser.examStatus as 'not_attempted' | 'passed' | 'failed' | 'not_applicable',
         remainingAttempts: dbUser.remainingAttempts,
         courseProgress: {
           modules: courseProgress?.map(cp => ({
             moduleId: cp.moduleId,
-            progress: cp.progress,
-            status: cp.status,
+            progress: cp.progress === null ? 0 : cp.progress,
+            status: cp.status === null ? 'not_started' : cp.status,
           })) || [],
           overallProgress: overallProgress,
         },
         mockTests: mockTestResults?.map(mt => ({
           testId: mt.testId,
           score: mt.score,
-          completed: mt.completed,
+          completed: mt.completed === null ? false : mt.completed,
         })) || [],
         credlyBadgeUrl: dbUser.credlyBadgeUrl || null,
         certificateNumber: dbUser.certificateNumber || null,

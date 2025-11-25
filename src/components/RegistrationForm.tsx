@@ -56,7 +56,10 @@ export default function RegistrationForm({ onClose }: RegistrationFormProps) {
           organization: formData.organization,
           address: formData.address,
           additionalInfo: formData.additionalInfo,
-          status: 'new'
+          status: 'new',
+          assignedTo: null, // Default value
+          estimatedValue: null, // Default value
+          followUpDate: null, // Default value
         });
 
         setStep('success');
@@ -297,7 +300,7 @@ export default function RegistrationForm({ onClose }: RegistrationFormProps) {
                     name="organization"
                     value={formData.organization}
                     onChange={handleInputChange}
-                    required={registrationType !== 'individual'}
+                    required={registrationType === 'university' || registrationType === 'school' || registrationType === 'organization'}
                     className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:outline-none transition-colors"
                     placeholder="Enter organization name"
                   />

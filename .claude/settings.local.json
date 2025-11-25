@@ -39,7 +39,8 @@
       "Bash(git push:*)",
       "Bash(git credential-manager-core:*)",
       "Bash(git credential-manager:*)",
-      "Bash(git remote set-url:*)"
+      "Bash(git remote set-url:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []
