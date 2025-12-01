@@ -29,26 +29,24 @@ let db: AnyDrizzleDb;
 
 // Check if running in a Node.js environment (where `process` is defined)
 if (typeof process !== 'undefined' && process.versions && process.versions.node) {
-  // Node.js environment - use pg driver for local development
-  if (databaseUrl.includes('localhost')) {
-    const { Client } = await import('pg');
-    const { drizzle } = await import('drizzle-orm/node-postgres');
-    const client = new Client(databaseUrl);
-    await client.connect();
-    db = drizzle(client, { schema });
-  } else {
-    // Node.js environment, but connecting to a remote Neon database
-    const { neon } = await import('@neondatabase/serverless');
-    const { drizzle } = await import('drizzle-orm/neon-http');
-    const sql = neon(databaseUrl);
-    db = drizzle(sql, { schema });
-  }
+  // Node.js environment - always use pg driver for better reliability
+  // pg driver works with both localhost and remote Neon databases
+  const { Client } = await import('pg');
+  const { drizzle } = await import('drizzle-orm/node-postgres');
+  const client = new Client({
+    connectionString: databaseUrl,
+    ssl: databaseUrl.includes('localhost') ? false : { rejectUnauthorized: false }
+  });
+  await client.connect();
+  db = drizzle(client, { schema });
+  console.log('✅ Database connected using pg driver');
 } else {
-  // Browser environment - always use Neon driver
+  // Browser environment - use Neon HTTP driver
   const { neon } = await import('@neondatabase/serverless');
   const { drizzle } = await import('drizzle-orm/neon-http');
   const sql = neon(databaseUrl);
   db = drizzle(sql, { schema });
+  console.log('✅ Database connected using Neon HTTP driver');
 }
 
 export { db };

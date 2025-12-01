@@ -19,6 +19,28 @@ app.get('/', (_req, res) => {
   res.send('ET AI Ready Backend API is running!');
 });
 
+// Health check endpoint
+app.get('/health', async (_req, res) => {
+  try {
+    // Test database connection
+    const { db } = await import('../db/config');
+    await db.select().from(require('../db/schema').users).limit(1);
+    res.json({ 
+      status: 'ok', 
+      database: 'connected',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    console.error('Health check error:', error);
+    res.status(500).json({ 
+      status: 'error', 
+      database: 'disconnected',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // API Routes
 app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);

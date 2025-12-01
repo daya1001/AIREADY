@@ -10,6 +10,7 @@ import MockTestPage from './pages/MockTestPage';
 import ErrorBoundary from './components/ErrorBoundary';
 import { User } from './services/authService';
 import { Home2Page } from './Home2';
+import Header from './components/Header';
 
 // Protected Route Component
 function ProtectedRoute({ children, user, requiredRole }: { children: React.ReactNode, user: User | null, requiredRole?: string }) {
@@ -159,37 +160,7 @@ function LandingPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}
-      <nav className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-20">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <img
-                src="https://economictimes.indiatimes.com/photo/119331595.cms"
-                alt="AI Ready Logo"
-                className="h-12 object-contain"
-              />
-            </div>
-            <div className="hidden md:flex items-center space-x-8">
-              <a href="#why-ai" className="text-slate-700 hover:text-primary-500 transition-colors font-medium">Why AI?</a>
-              <a href="#benefits" className="text-slate-700 hover:text-primary-500 transition-colors font-medium">Benefits</a>
-              <a href="#testimonials" className="text-slate-700 hover:text-primary-500 transition-colors font-medium">Testimonials</a>
-              <button
-                onClick={() => navigate('/login')}
-                className="text-slate-700 hover:text-primary-500 transition-colors font-medium"
-              >
-                Login
-              </button>
-              <button
-                onClick={() => navigate('/register')}
-                className="text-white px-6 py-2 rounded-lg hover:opacity-90 transition-all transform hover:scale-105 shadow-md font-semibold"
-                style={{backgroundColor: '#ee0007'}}
-              >
-                Get Certified
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Header />
 
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-8 pb-12 lg:pb-16 bg-white">

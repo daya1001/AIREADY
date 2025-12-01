@@ -148,28 +148,130 @@ class AuthService {
     return null;
   }
 
-  async login(email: string, password: string): Promise<User | null> {
+  async checkUserExists(email: string | null, phone: string | null): Promise<{ exists: boolean; hasEmail?: boolean; hasPhone?: boolean; email?: string; phone?: string }> {
     try {
-      // First, check if it's an institution login
-      const institutionUser = this.checkInstitutionLogin(email, password);
-      if (institutionUser) {
-        localStorage.setItem('currentUser', JSON.stringify(institutionUser));
-        return institutionUser;
+      const response = await fetch('/api/auth/check-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, phone }),
+      });
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error checking user existence:', error);
+      return { exists: false };
+    }
+  }
+
+  async signup(userData: { name: string; email?: string | null; phone?: string | null; password: string; address: string }): Promise<User | null> {
+    try {
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+
+      const data = await response.json();
+
+      if (!data.success || !data.user) {
+        throw new Error(data.message || 'Signup failed');
       }
 
-      //alert(2)
+      const dbUser = data.user;
+
+      // Load course progress and mock test results
+      const courseProgressResponse = await (await fetch(`/api/auth/user/${dbUser.id}/course-progress`)).json();
+      const mockTestResultsResponse = await (await fetch(`/api/auth/user/${dbUser.id}/mock-tests`)).json();
+
+      const courseProgress: CourseProgressType[] = courseProgressResponse.progress || [];
+      const mockTestResults: MockTestResultType[] = mockTestResultsResponse.results || [];
+
+      // Calculate overall progress
+      let overallProgress = 0;
+      if (courseProgress && courseProgress.length > 0) {
+        overallProgress = courseProgress[0]?.overallProgress || 0;
+      }
+
+      // Build user object matching the expected format
+      const user: User = {
+        id: String(dbUser.id),
+        name: dbUser.name,
+        email: dbUser.email || '',
+        role: dbUser.role as 'user' | 'admin',
+        adminRole: dbUser.adminRole || undefined,
+        certificationTrack: dbUser.certificationTrack || undefined,
+        profile: dbUser.profile || {
+          phone: dbUser.phone || '',
+          organization: '',
+          designation: '',
+          location: dbUser.location || dbUser.address || '',
+          joinedDate: '',
+          bio: '',
+          photo: null,
+          idDocument: null,
+          verified: false,
+          verifiedBy: null,
+          verifiedDate: null,
+        },
+        enrollment: dbUser.enrollment || {
+          status: 'active',
+          enrolledDate: '',
+          expiryDate: '',
+        },
+        examStatus: dbUser.examStatus as 'not_attempted' | 'passed' | 'failed' | 'not_applicable',
+        remainingAttempts: dbUser.remainingAttempts,
+        courseProgress: {
+          modules: courseProgress?.map(cp => ({
+            moduleId: cp.moduleId,
+            progress: cp.progress === null ? 0 : cp.progress,
+            status: cp.status === null ? 'not_started' : cp.status,
+          })) || [],
+          overallProgress: overallProgress,
+        },
+        mockTests: mockTestResults?.map(mt => ({
+          testId: mt.testId,
+          score: mt.score,
+          completed: mt.completed === null ? false : mt.completed,
+        })) || [],
+        credlyBadgeUrl: dbUser.credlyBadgeUrl || null,
+        certificateNumber: dbUser.certificateNumber || null,
+      };
+
+      // Store user session
+      localStorage.setItem('currentUser', JSON.stringify(user));
+      return user;
+    } catch (error) {
+      console.error('Signup error:', error);
+      throw error;
+    }
+  }
+
+  async login(email: string | null, phone: string | null, password: string): Promise<User | null> {
+    try {
+      // First, check if it's an institution login (only if email provided)
+      if (email) {
+        const institutionUser = this.checkInstitutionLogin(email, password);
+        if (institutionUser) {
+          localStorage.setItem('currentUser', JSON.stringify(institutionUser));
+          return institutionUser;
+        }
+      }
+
       // If not institution, make a request to the backend for user/admin authentication
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, phone, password }),
       });
 
       const data = await response.json();
-
-     
 
       if (!data.success || !data.user) {
         return null;

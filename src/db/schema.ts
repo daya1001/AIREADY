@@ -4,14 +4,15 @@ import { pgTable, text, varchar, integer, boolean, timestamp, json, serial } fro
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),
-  email: varchar('email', { length: 255 }).notNull().unique(),
+  email: varchar('email', { length: 255 }), // Made optional - at least email or phone required
   password: varchar('password', { length: 255 }).notNull(),
   role: varchar('role', { length: 50 }).notNull().default('user'), // 'user' or 'admin'
   adminRole: varchar('admin_role', { length: 100 }), // role ID for admins
   certificationTrack: varchar('certification_track', { length: 100 }), // track ID
 
   // Profile
-  phone: varchar('phone', { length: 50 }),
+  phone: varchar('phone', { length: 50 }), // At least email or phone required
+  address: text('address'), // Added address field
   organization: varchar('organization', { length: 255 }),
   designation: varchar('designation', { length: 255 }),
   location: varchar('location', { length: 255 }),
