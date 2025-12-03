@@ -3,11 +3,6 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
-// Log startup info
-console.log('🚀 ET AI Ready Platform Starting...');
-console.log('Environment:', import.meta.env.MODE);
-console.log('Base URL:', import.meta.env.BASE_URL);
-
 try {
   const rootElement = document.getElementById('root');
   if (!rootElement) {
@@ -19,8 +14,6 @@ try {
       <App />
     </StrictMode>
   );
-
-  console.log('✅ App rendered successfully');
 } catch (error) {
   console.error('❌ Failed to render app:', error);
   // Show error in the DOM

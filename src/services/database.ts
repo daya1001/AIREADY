@@ -297,6 +297,73 @@ export async function saveMockTestResult(userId: number, testId: string, score: 
   }
 }
 
+export async function createMockTest(test: {
+  id: string;
+  title: string;
+  description?: string;
+  duration?: number;
+  totalQuestions?: number;
+  passingScore?: number;
+  questions: any[];
+}) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/mock-tests`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(test),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error creating mock test:', error);
+    throw error;
+  }
+}
+
+export async function updateMockTest(testId: string, test: {
+  title?: string;
+  description?: string;
+  duration?: number;
+  totalQuestions?: number;
+  passingScore?: number;
+  questions?: any[];
+}) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/mock-tests/${testId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(test),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating mock test:', error);
+    throw error;
+  }
+}
+
+export async function deleteMockTest(testId: string) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/mock-tests/${testId}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error deleting mock test:', error);
+    throw error;
+  }
+}
+
 // ============================================
 // ROLES & PERMISSIONS OPERATIONS
 // ============================================

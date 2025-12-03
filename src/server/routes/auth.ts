@@ -1,6 +1,5 @@
 import { Router } from 'express';
-import { authenticateUser, getUserByEmail, checkUserExists, createUser } from '../controllers/authController';
-import { getUserCourseProgress, getUserMockTestResults } from '../../services/database';
+import { authenticateUser, getUserByEmail, checkUserExists, createUser, getUserCourseProgress, getUserMockTestResults } from '../controllers/authController';
 
 const authRouter = Router();
 
@@ -8,9 +7,7 @@ const authRouter = Router();
 authRouter.post('/check-user', async (req, res) => {
   const { email, phone } = req.body;
   try {
-    console.log('🔵 [API] Check user request received:', { email, phone });
     const result = await checkUserExists(email || null, phone || null);
-    console.log('🟢 [API] Check user result:', JSON.stringify(result, null, 2));
     res.json({ success: true, ...result });
   } catch (error: any) {
     console.error('🔴 [API] Backend check user error:', error);
@@ -103,11 +100,19 @@ authRouter.get('/user-by-email', async (req, res) => {
 authRouter.get('/user/:userId/course-progress', async (req, res) => {
   try {
     const userId = parseInt(req.params.userId);
+    if (isNaN(userId)) {
+      return res.status(400).json({ success: false, message: 'Invalid user ID' });
+    }
     const progress = await getUserCourseProgress(userId);
     res.json({ success: true, progress });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching user course progress:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
+    console.error('Error details:', error.message, error.stack);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error',
+      error: error.message 
+    });
   }
 });
 
@@ -115,11 +120,19 @@ authRouter.get('/user/:userId/course-progress', async (req, res) => {
 authRouter.get('/user/:userId/mock-tests', async (req, res) => {
   try {
     const userId = parseInt(req.params.userId);
+    if (isNaN(userId)) {
+      return res.status(400).json({ success: false, message: 'Invalid user ID' });
+    }
     const results = await getUserMockTestResults(userId);
     res.json({ success: true, results });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching user mock test results:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
+    console.error('Error details:', error.message, error.stack);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error',
+      error: error.message 
+    });
   }
 });
 

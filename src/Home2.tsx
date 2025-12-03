@@ -24,9 +24,6 @@ export function Home2Page() {
   const navigate = useNavigate();
   const [activePathTab, setActivePathTab] = useState<number>(0);
 
-  // Log to confirm component is rendering
-  console.log('Home2Page component rendered');
-
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}

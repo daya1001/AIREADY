@@ -72,14 +72,13 @@ export default function Header() {
     // Close modal
     setShowLoginModal(false);
     setMobileMenuOpen(false);
-    
-    // Navigate based on role
-    if (user.role === 'admin') {
-      navigate('/admin');
-    } else if (user.role === 'institution') {
-      navigate('/institution');
+    // Always redirect to dashboard after successful login
+    if (user.role.toLowerCase() === 'admin') {
+      navigate('/admin', { replace: true });
+    } else if (user.role.toLowerCase() === 'institution') {
+      navigate('/institution', { replace: true });
     } else {
-      navigate('/dashboard');
+      navigate('/dashboard', { replace: true });
     }
   };
 

@@ -9,10 +9,7 @@ import tracksData from '../data/certificationTracks.json';
 
 async function seed() {
   try {
-    console.log('🌱 Starting database seeding...');
-
     // 1. Seed Permissions
-    console.log('📝 Seeding permissions...');
     for (const permission of rolesData.permissions) {
       await db.insert(permissions).values({
         id: permission.id,
@@ -28,7 +25,6 @@ async function seed() {
     }
 
     // 2. Seed Roles
-    console.log('👥 Seeding roles...');
     for (const role of rolesData.roles) {
       await db.insert(roles).values({
         id: role.id,
@@ -40,7 +36,6 @@ async function seed() {
     }
 
     // 3. Seed Certification Tracks
-    console.log('🎓 Seeding certification tracks...');
     for (const track of tracksData.tracks) {
       await db.insert(certificationTracks).values({
         id: track.id,
@@ -60,7 +55,6 @@ async function seed() {
     }
 
     // 4. Seed Modules
-    console.log('📚 Seeding curriculum modules...');
     for (const module of curriculumData.modules) {
       await db.insert(modules).values({
         id: module.id,
@@ -73,7 +67,6 @@ async function seed() {
     }
 
     // 5. Seed Mock Tests
-    console.log('📝 Seeding mock tests...');
     for (const test of mockTestsData.tests) {
       await db.insert(mockTests).values({
         id: test.id,
@@ -86,7 +79,6 @@ async function seed() {
     }
 
     // 6. Seed Users
-    console.log('👤 Seeding users...');
     for (const user of usersData.users) {
       const [insertedUser] = await db.insert(users).values({
         name: user.name,
@@ -141,8 +133,6 @@ async function seed() {
         }
       }
     }
-
-    console.log('✅ Database seeding completed successfully!');
   } catch (error) {
     console.error('❌ Error seeding database:', error);
     throw error;

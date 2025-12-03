@@ -1,7 +1,9 @@
-import { useState } from 'react';
-import { X, User, Building2, Mail, Phone, MapPin, CheckCircle, CreditCard, DollarSign } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, User, Building2, Mail, Phone, MapPin, CheckCircle, CreditCard, DollarSign, AlertCircle } from 'lucide-react';
 import { paymentService, COURSES, CoursePrice } from '../services/paymentService';
 import { leadService, LeadType } from '../services/leadService';
+import { authService, User as UserType } from '../services/authService';
+import Login from './Login';
 
 interface RegistrationFormProps {
   onClose: () => void;
@@ -10,11 +12,15 @@ interface RegistrationFormProps {
 type RegistrationType = 'individual' | 'university' | 'school' | 'organization';
 
 export default function RegistrationForm({ onClose }: RegistrationFormProps) {
-  const [step, setStep] = useState<'type' | 'form' | 'course' | 'success'>('type');
+  const [step, setStep] = useState<'type' | 'form' | 'auth' | 'course' | 'success'>('type');
   const [registrationType, setRegistrationType] = useState<RegistrationType | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
   const [paymentCompleted, setPaymentCompleted] = useState(false);
+  const [validationError, setValidationError] = useState<string>('');
+  const [userExists, setUserExists] = useState<boolean>(false);
+  const [verifiedEmail, setVerifiedEmail] = useState<string | null>(null);
+  const [verifiedPhone, setVerifiedPhone] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -23,6 +29,19 @@ export default function RegistrationForm({ onClose }: RegistrationFormProps) {
     address: '',
     additionalInfo: '',
   });
+
+  // Prevent background scrolling when modal is open
+  useEffect(() => {
+    // Save the original overflow value
+    const originalOverflow = document.body.style.overflow;
+    // Disable scrolling on body
+    document.body.style.overflow = 'hidden';
+
+    // Cleanup: restore scrolling when component unmounts
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
 
   const handleTypeSelect = (type: RegistrationType) => {
     setRegistrationType(type);
@@ -34,16 +53,89 @@ export default function RegistrationForm({ onClose }: RegistrationFormProps) {
       ...formData,
       [e.target.name]: e.target.value,
     });
+    // Clear validation error when user starts typing
+    if (validationError) {
+      setValidationError('');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setValidationError('');
     setIsSubmitting(true);
 
     try {
+      // Validate that at least email or phone is provided
+      if (!formData.email && !formData.phone) {
+        setValidationError('Either email or phone number is required');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Check if user already exists (check both email and phone)
+      const emailToCheck = formData.email.trim() || null;
+      const phoneToCheck = formData.phone.trim() || null;
+
+      const userCheckResult = await authService.checkUserExists(emailToCheck, phoneToCheck);
+      
+      // Check if user exists in database or JSSO (statusCode 213 means user exists)
+      if (userCheckResult.exists) {
+        // Check if user has a primary identifier set
+        const primaryIdentifier = userCheckResult.primaryIdentifier;
+        
+        if (primaryIdentifier) {
+          // User has a primary identifier - check if the provided identifier matches
+          if (primaryIdentifier === 'email' && !emailToCheck) {
+            setValidationError('This account is registered with email. Please use your email address to login.');
+            setIsSubmitting(false);
+            return;
+          }
+          if (primaryIdentifier === 'phone' && !phoneToCheck) {
+            setValidationError('This account is registered with phone number. Please use your phone number to login.');
+            setIsSubmitting(false);
+            return;
+          }
+          
+          // Set the verified identifier based on primary identifier
+          if (primaryIdentifier === 'email') {
+            setVerifiedEmail(userCheckResult.email || emailToCheck);
+            setVerifiedPhone(null);
+          } else {
+            setVerifiedPhone(userCheckResult.phone || phoneToCheck);
+            setVerifiedEmail(null);
+          }
+        } else {
+          // No primary identifier set yet - user hasn't logged in for the first time
+          // Show login with both options available
+          setVerifiedEmail(userCheckResult.email || emailToCheck);
+          setVerifiedPhone(userCheckResult.phone || phoneToCheck);
+        }
+        
+        // User exists - show login popup before proceeding to plans
+        setUserExists(true);
+        
+        // For Individual Professional, show auth step (login/signup) before course selection
+        if (registrationType === 'individual') {
+          setStep('auth');
+        } else {
+          // For other types, show error (they should login separately)
+          setValidationError('An account with this email or phone number already exists. Please login to continue.');
+          setIsSubmitting(false);
+          return;
+        }
+        setIsSubmitting(false);
+        return;
+      }
+
+      // If user doesn't exist, show signup step for individual professionals
       if (registrationType === 'individual') {
-        // For Individual Professional, move to course selection
-        setStep('course');
+        // User doesn't exist - show signup step before course selection
+        setUserExists(false);
+        setVerifiedEmail(emailToCheck);
+        setVerifiedPhone(phoneToCheck);
+        setStep('auth');
+        setIsSubmitting(false);
+        return;
       } else {
         // For University, School, Organization - create lead
         const leadType: LeadType = registrationType as LeadType;
@@ -66,7 +158,7 @@ export default function RegistrationForm({ onClose }: RegistrationFormProps) {
       }
     } catch (error) {
       console.error('Error submitting registration:', error);
-      alert('There was an error submitting your registration. Please try again.');
+      setValidationError('There was an error submitting your registration. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -102,7 +194,6 @@ export default function RegistrationForm({ onClose }: RegistrationFormProps) {
           setPaymentCompleted(true);
           setStep('success');
           // TODO: Create user account and grant access to dashboard
-          console.log('Payment successful! Payment ID:', paymentResult.paymentId);
         } else {
           alert('Payment verification failed. Please contact support.');
         }
@@ -241,6 +332,14 @@ export default function RegistrationForm({ onClose }: RegistrationFormProps) {
                 </p>
               </div>
 
+              {/* Validation Error Message */}
+              {validationError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start space-x-3">
+                  <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-red-700">{validationError}</p>
+                </div>
+              )}
+
               <div>
                 <label className="flex items-center space-x-2 text-sm font-semibold text-slate-700 mb-2">
                   <User className="w-4 h-4" />
@@ -354,6 +453,58 @@ export default function RegistrationForm({ onClose }: RegistrationFormProps) {
                 </button>
               </div>
             </form>
+          )}
+
+          {step === 'auth' && (
+            <div className="space-y-6">
+              {userExists ? (
+                // User exists - show login with pre-filled email/phone
+                <div>
+                  <p className="text-slate-600 mb-6">
+                    {verifiedEmail && !verifiedPhone 
+                      ? `An account with email ${verifiedEmail} already exists. Please login to continue.`
+                      : verifiedPhone && !verifiedEmail
+                      ? `An account with phone ${verifiedPhone} already exists. Please login to continue.`
+                      : `An account already exists. Please login to continue.`
+                    }
+                  </p>
+                  <Login
+                    initialEmail={verifiedEmail}
+                    initialPhone={verifiedPhone}
+                    initialStep="password"
+                    onLogin={() => {
+                      // After successful login, proceed to course selection
+                      setStep('course');
+                    }}
+                    onClose={() => {
+                      // If user closes login, go back to form
+                      setStep('form');
+                    }}
+                  />
+                </div>
+              ) : (
+                // User doesn't exist - show signup form with pre-filled email/phone
+                <div>
+                  <p className="text-slate-600 mb-6">
+                    Create an account to proceed with course selection. You'll need to set a password and complete your profile.
+                  </p>
+                  <Login
+                    initialEmail={verifiedEmail}
+                    initialPhone={verifiedPhone}
+                    initialName={formData.name}
+                    initialStep="signup"
+                    onLogin={() => {
+                      // After successful signup, proceed to course selection
+                      setStep('course');
+                    }}
+                    onClose={() => {
+                      // If user closes signup, go back to form
+                      setStep('form');
+                    }}
+                  />
+                </div>
+              )}
+            </div>
           )}
 
           {step === 'course' && (

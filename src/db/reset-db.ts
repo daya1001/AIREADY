@@ -14,8 +14,6 @@ async function resetDatabase() {
   await client.connect();
 
   try {
-    console.log('🔄 Truncating all tables...');
-
     const tableNames = [
       'users',
       'course_progress',
@@ -30,10 +28,7 @@ async function resetDatabase() {
 
     for (const tableName of tableNames) {
       await client.query(`TRUNCATE TABLE \"${tableName}\" RESTART IDENTITY CASCADE;`);
-      console.log(`✅ Table \"${tableName}\" truncated.`);
     }
-
-    console.log('🎉 All tables truncated and identities restarted successfully!');
   } catch (error) {
     console.error('❌ Error resetting database:', error);
     throw error;

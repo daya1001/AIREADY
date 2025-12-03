@@ -12,6 +12,7 @@ export const users = pgTable('users', {
 
   // Profile
   phone: varchar('phone', { length: 50 }), // At least email or phone required
+  primaryIdentifier: varchar('primary_identifier', { length: 10 }), // 'email' or 'phone' - set on first login
   address: text('address'), // Added address field
   organization: varchar('organization', { length: 255 }),
   designation: varchar('designation', { length: 255 }),
@@ -69,6 +70,7 @@ export const mockTestResults = pgTable('mock_test_results', {
   completedAt: timestamp('completed_at'),
   answers: json('answers'), // Store user's answers
   createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
 });
 
 // Roles Table

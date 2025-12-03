@@ -136,7 +136,6 @@ class PaymentService {
   async verifyPayment(paymentId: string, orderId: string): Promise<boolean> {
     // In production, this should call your backend API to verify the payment
     // For now, we'll simulate successful verification
-    console.log('Verifying payment:', { paymentId, orderId });
     return true;
   }
 

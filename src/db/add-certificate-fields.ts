@@ -13,15 +13,12 @@ async function addCertificateFields() {
   const client = await pool.connect();
 
   try {
-    console.log('🔄 Adding new certificate and addon attempts fields...');
-
     // Add addon attempts fields
     await client.query(`
       ALTER TABLE users
       ADD COLUMN IF NOT EXISTS addon_attempts INTEGER DEFAULT 0,
       ADD COLUMN IF NOT EXISTS addon_attempts_purchased INTEGER DEFAULT 0;
     `);
-    console.log('✅ Added addon attempts fields');
 
     // Add certificate validity fields
     await client.query(`
@@ -31,14 +28,12 @@ async function addCertificateFields() {
       ADD COLUMN IF NOT EXISTS certificate_status VARCHAR(50) DEFAULT 'active',
       ADD COLUMN IF NOT EXISTS expiry_notification_sent BOOLEAN DEFAULT FALSE;
     `);
-    console.log('✅ Added certificate validity fields');
 
     // Update default remaining_attempts to 3 for new users
     await client.query(`
       ALTER TABLE users
       ALTER COLUMN remaining_attempts SET DEFAULT 3;
     `);
-    console.log('✅ Updated default remaining attempts to 3');
 
     // Update certification_tracks table to add new pricing fields
     await client.query(`
@@ -46,9 +41,6 @@ async function addCertificateFields() {
       ADD COLUMN IF NOT EXISTS addon_attempts_price INTEGER,
       ADD COLUMN IF NOT EXISTS re_exam_price INTEGER;
     `);
-    console.log('✅ Added pricing fields to certification_tracks');
-
-    console.log('✅ Migration completed successfully!');
   } catch (error) {
     console.error('❌ Error during migration:', error);
     throw error;

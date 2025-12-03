@@ -24,10 +24,7 @@ async function seed() {
   const client = await pool.connect();
 
   try {
-    console.log('🌱 Starting database seeding...');
-
     // 1. Seed Permissions
-    console.log('📝 Seeding permissions...');
     for (const permission of rolesData.permissions) {
       await client.query(
         `INSERT INTO permissions (id, name, description)
@@ -38,7 +35,6 @@ async function seed() {
     }
 
     // 2. Seed Roles
-    console.log('👥 Seeding roles...');
     for (const role of rolesData.roles) {
       await client.query(
         `INSERT INTO roles (id, name, description, permissions, system_role)
@@ -49,7 +45,6 @@ async function seed() {
     }
 
     // 3. Seed Certification Tracks
-    console.log('🎓 Seeding certification tracks...');
     for (const track of tracksData.tracks) {
       await client.query(
         `INSERT INTO certification_tracks (id, name, description, color, icon, duration, price, passing_score, modules, competencies, target_audience, prerequisites, active)
@@ -74,7 +69,6 @@ async function seed() {
     }
 
     // 4. Seed Modules
-    console.log('📚 Seeding curriculum modules...');
     for (const module of curriculumData.modules) {
       await client.query(
         `INSERT INTO modules (id, title, description, duration, difficulty, topics, video_url, pdf_url)
@@ -94,7 +88,6 @@ async function seed() {
     }
 
     // 5. Seed Mock Tests
-    console.log('📝 Seeding mock tests...');
     for (const test of mockTestsData.tests) {
       await client.query(
         `INSERT INTO mock_tests (id, title, description, duration, total_questions, passing_score, questions)
@@ -113,7 +106,6 @@ async function seed() {
     }
 
     // 6. Seed Users
-    console.log('👤 Seeding users...');
     for (const user of usersData.users) {
       const result = await client.query(
         `INSERT INTO users (name, email, password, role, admin_role, certification_track, phone, organization, designation, location, joined_date, bio, photo, id_document, verified, verified_by, verified_date, enrollment_status, enrolled_date, expiry_date, exam_status, remaining_attempts, credly_badge_url, certificate_number)
@@ -180,8 +172,6 @@ async function seed() {
         }
       }
     }
-
-    console.log('✅ Database seeding completed successfully!');
   } catch (error) {
     console.error('❌ Error seeding database:', error);
     throw error;

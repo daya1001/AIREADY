@@ -23,8 +23,6 @@ if (!databaseUrl) {
   throw new Error('DATABASE_URL or VITE_DATABASE_URL is not set in environment variables. Please set VITE_DATABASE_URL in your deployment platform.');
 }
 
-console.log('✅ Database URL configured');
-
 let db: AnyDrizzleDb;
 
 // Check if running in a Node.js environment (where `process` is defined)
@@ -39,14 +37,12 @@ if (typeof process !== 'undefined' && process.versions && process.versions.node)
   });
   await client.connect();
   db = drizzle(client, { schema });
-  console.log('✅ Database connected using pg driver');
 } else {
   // Browser environment - use Neon HTTP driver
   const { neon } = await import('@neondatabase/serverless');
   const { drizzle } = await import('drizzle-orm/neon-http');
   const sql = neon(databaseUrl);
   db = drizzle(sql, { schema });
-  console.log('✅ Database connected using Neon HTTP driver');
 }
 
 export { db };

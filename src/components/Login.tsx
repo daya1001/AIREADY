@@ -1,19 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Mail, Lock, Eye, EyeOff, LogIn, AlertCircle, Phone, User, MapPin, CheckCircle } from 'lucide-react';
 import { authService, User as UserType } from '../services/authService';
 
 interface LoginProps {
   onLogin: (user: UserType) => void;
   onClose: () => void;
+  initialEmail?: string | null;
+  initialPhone?: string | null;
+  initialName?: string | null;
+  initialStep?: 'password' | 'signup'; // Skip identify step if initial values provided
 }
 
 type Step = 'identify' | 'password' | 'signup' | 'success';
 
-export default function Login({ onLogin, onClose }: LoginProps) {
-  const [step, setStep] = useState<Step>('identify');
+export default function Login({ onLogin, onClose, initialEmail, initialPhone, initialName, initialStep }: LoginProps) {
+  // If initial values provided, start at password or signup step
+  const getInitialStep = (): Step => {
+    if (initialStep === 'password') return 'password';
+    if (initialStep === 'signup') return 'signup';
+    return 'identify';
+  };
+
+  const [step, setStep] = useState<Step>(getInitialStep());
   const [identifier, setIdentifier] = useState(''); // Single field for email or phone
-  const [email, setEmail] = useState(''); // Will be set based on identifier
-  const [phone, setPhone] = useState(''); // Will be set based on identifier
+  const [email, setEmail] = useState(initialEmail || ''); // Will be set based on identifier
+  const [phone, setPhone] = useState(initialPhone || ''); // Will be set based on identifier
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -28,6 +39,34 @@ export default function Login({ onLogin, onClose }: LoginProps) {
     confirmPassword: '',
     address: '',
   });
+
+  // Prevent background scrolling when modal is open
+  useEffect(() => {
+    // Save the original overflow value
+    const originalOverflow = document.body.style.overflow;
+    // Disable scrolling on body
+    document.body.style.overflow = 'hidden';
+
+    // Cleanup: restore scrolling when component unmounts
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
+  // Pre-fill signup form with initial values if provided
+  useEffect(() => {
+    if (step === 'signup') {
+      if (initialName) {
+        setSignupData(prev => ({ ...prev, name: initialName }));
+      }
+      if (initialEmail) {
+        setSignupData(prev => ({ ...prev, email: initialEmail }));
+      }
+      if (initialPhone) {
+        setSignupData(prev => ({ ...prev, phone: initialPhone }));
+      }
+    }
+  }, [initialName, initialEmail, initialPhone, step]);
 
   const handleIdentifySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,6 +134,9 @@ export default function Login({ onLogin, onClose }: LoginProps) {
       );
 
       if (user) {
+        // Call onLogin which will handle navigation in the parent component
+        // For LoginPage: navigates to /dashboard, /admin, or /institution
+        // For Header modal: closes modal and navigates
         onLogin(user);
       } else {
         setError('Invalid password. Please try again.');

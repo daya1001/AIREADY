@@ -159,11 +159,53 @@ router.put('/:userId/course-progress/:moduleId', async (req, res) => {
 router.get('/:userId/mock-tests', async (req, res) => {
   try {
     const userId = parseInt(req.params.userId);
+    
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: 'Invalid user ID' });
+    }
+    
     const results = await db.select().from(mockTestResults).where(eq(mockTestResults.userId, userId));
     res.json(results);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching mock test results:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Error details:', error.message, error.stack);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      message: error.message 
+    });
+  }
+});
+
+// Get specific user mock test result
+router.get('/:userId/mock-tests/:testId', async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    const testId = req.params.testId;
+    
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: 'Invalid user ID' });
+    }
+    
+    const results = await db.select()
+      .from(mockTestResults)
+      .where(and(
+        eq(mockTestResults.userId, userId),
+        eq(mockTestResults.testId, testId)
+      ))
+      .limit(1);
+    
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'Mock test result not found' });
+    }
+    
+    res.json(results[0]);
+  } catch (error: any) {
+    console.error('Error fetching mock test result:', error);
+    console.error('Error details:', error.message, error.stack);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      message: error.message 
+    });
   }
 });
 
@@ -173,6 +215,10 @@ router.put('/:userId/mock-tests/:testId', async (req, res) => {
     const userId = parseInt(req.params.userId);
     const testId = req.params.testId;
     const { score, completed, answers } = req.body;
+
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: 'Invalid user ID' });
+    }
 
     const existing = await db.select()
       .from(mockTestResults)
@@ -210,9 +256,13 @@ router.put('/:userId/mock-tests/:testId', async (req, res) => {
       }).returning();
     }
     res.json(result[0]);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error saving mock test result:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Error details:', error.message, error.stack);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      message: error.message 
+    });
   }
 });
 

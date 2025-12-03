@@ -3,8 +3,6 @@ import { sql } from 'drizzle-orm';
 
 async function createLeadsTable() {
   try {
-    console.log('Creating leads table...');
-
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS leads (
         id SERIAL PRIMARY KEY,
@@ -25,8 +23,6 @@ async function createLeadsTable() {
       )
     `);
 
-    console.log('✓ Leads table created successfully!');
-
     // Create index on email for faster searches
     await db.execute(sql`
       CREATE INDEX IF NOT EXISTS idx_leads_email ON leads(email)
@@ -41,8 +37,6 @@ async function createLeadsTable() {
     await db.execute(sql`
       CREATE INDEX IF NOT EXISTS idx_leads_created_at ON leads(created_at DESC)
     `);
-
-    console.log('✓ Indexes created successfully!');
 
     process.exit(0);
   } catch (error) {

@@ -119,7 +119,6 @@ export default function CertificationProgramsManager() {
 
   // Handlers
   const handleSaveCourse = (course: any) => {
-    console.log('Saving course:', course);
     alert('Course module saved successfully!');
     setShowCourseEditor(false);
     setEditingCourse(null);
@@ -128,14 +127,12 @@ export default function CertificationProgramsManager() {
 
   const handleDeleteCourse = (moduleId: string) => {
     if (confirm('Are you sure you want to delete this module? This action cannot be undone.')) {
-      console.log('Deleting module:', moduleId);
       alert('Module deleted successfully!');
       loadPrograms();
     }
   };
 
   const handleSaveTest = (test: any) => {
-    console.log('Saving test:', test);
     alert('Mock test saved successfully!');
     setShowTestEditor(false);
     setEditingTest(null);
@@ -144,25 +141,21 @@ export default function CertificationProgramsManager() {
 
   const handleDeleteTest = (testId: string) => {
     if (confirm('Are you sure you want to delete this test? This action cannot be undone.')) {
-      console.log('Deleting test:', testId);
       alert('Test deleted successfully!');
       loadPrograms();
     }
   };
 
   const handleSaveExamConfig = () => {
-    console.log('Saving exam configuration:', examConfig);
     alert('Exam configuration saved successfully!');
     setShowExamConfig(false);
   };
 
   const handleExportPDF = () => {
-    console.log('Exporting certificates as PDF...');
     alert('PDF export initiated! In production, this would generate a PDF with all certificate data.');
   };
 
   const handleExportExcel = () => {
-    console.log('Exporting analytics as Excel...');
     const program = currentProgram;
     if (!program) return;
 
@@ -1182,7 +1175,6 @@ End of Report
                                 <div className="flex items-center space-x-2">
                                   <button
                                     onClick={() => {
-                                      console.log('Downloading certificate for:', student.name);
                                       alert(`Downloading certificate for ${student.name}...`);
                                     }}
                                     className="flex items-center space-x-1 bg-purple-100 text-purple-600 px-3 py-1.5 rounded-lg hover:bg-purple-200 transition-all text-sm font-semibold"
@@ -1193,7 +1185,6 @@ End of Report
                                   {!student.credlyBadgeUrl && (
                                     <button
                                       onClick={() => {
-                                        console.log('Issuing Credly badge for:', student.name);
                                         alert(`Issuing Credly badge for ${student.name}...`);
                                       }}
                                       className="flex items-center space-x-1 bg-green-100 text-green-600 px-3 py-1.5 rounded-lg hover:bg-green-200 transition-all text-sm font-semibold"

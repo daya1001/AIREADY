@@ -32,7 +32,6 @@ export default function MockTestPage() {
 
   const handleTestComplete = () => {
     // Test completed and saved - could show a success message here
-    console.log('Test completed successfully!');
   };
 
   if (error) {

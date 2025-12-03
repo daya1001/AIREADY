@@ -14,8 +14,6 @@ async function _getUserByEmailWithPassword(email: string) {
     const db = await getDb();
     const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
 
-    //console.log('====result=====', result);
-
     if (result.length === 0) return null;
     return result[0];
   } catch (error) {
@@ -27,23 +25,50 @@ async function _getUserByEmailWithPassword(email: string) {
 export async function authenticateUser(email: string | null, phone: string | null, password: string) {
   try {
     let user;
+    let identifierUsed: 'email' | 'phone' | null = null;
+    
     if (email) {
       user = await _getUserByEmailWithPassword(email);
+      identifierUsed = 'email';
     } else if (phone) {
       // Get user by phone
       const db = await getDb();
       const result = await db.select().from(users).where(eq(users.phone, phone)).limit(1);
       if (result.length === 0) return null;
       user = result[0];
+      identifierUsed = 'phone';
     } else {
       return null;
     }
 
     if (!user) return null;
     
+    // Check if user has a primary identifier set
+    // If primary identifier is set, only allow login with that identifier
+    if (user.primaryIdentifier) {
+      if (user.primaryIdentifier !== identifierUsed) {
+        // User is trying to login with non-primary identifier
+        return null;
+      }
+    }
+    
     // Use bcrypt to compare password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (isPasswordValid) {
+      // If this is the first login (primaryIdentifier is null), set it based on what was used
+      if (!user.primaryIdentifier && identifierUsed) {
+        const db = await getDb();
+        await db.update(users)
+          .set({ 
+            primaryIdentifier: identifierUsed,
+            updatedAt: new Date()
+          })
+          .where(eq(users.id, user.id));
+        
+        // Update user object
+        user.primaryIdentifier = identifierUsed;
+      }
+      
       // Successfully authenticated, now return user *without* password
       const { password: _, ...userWithoutPassword } = user;
       return userWithoutPassword;
@@ -60,13 +85,13 @@ export async function authenticateUser(email: string | null, phone: string | nul
 export async function checkUserExists(email: string | null, phone: string | null) {
   try {
     if (!email && !phone) {
-      return { exists: false, message: 'Email or phone is required' };
+      return { exists: false, message: 'Email or phone is required', primaryIdentifier: null };
     }
 
     // Determine identifier for external API call (prefer email)
     const identifier = email || phone;
     if (!identifier) {
-      return { exists: false };
+      return { exists: false, primaryIdentifier: null };
     }
 
     // Check local database first
@@ -91,8 +116,6 @@ export async function checkUserExists(email: string | null, phone: string | null
 
     // Call external API to check user existence
     try {
-      console.log('🔍 Calling JSSO API to check user existence for identifier:', identifier);
-      
       const externalApiResponse = await fetch('https://jssostg.indiatimes.com/sso/crossapp/identity/web/checkUserExists', {
         method: 'POST',
         headers: {
@@ -115,15 +138,10 @@ export async function checkUserExists(email: string | null, phone: string | null
         },
         body: JSON.stringify({ identifier })
       });
-
-      console.log('📡 JSSO API Response Status:', externalApiResponse.status, externalApiResponse.statusText);
       
       const externalApiData = await externalApiResponse.json();
-      console.log('📦 JSSO API Response Data:', JSON.stringify(externalApiData, null, 2));
       
       const statusCode = externalApiData?.data?.statusCode || externalApiData?.statusCode;
-      console.log('✅ JSSO API Status Code:', statusCode);
-      console.log('💾 User exists in DB:', userExistsInDb);
 
       // Logic: 
       // - If statusCode === 213 OR user exists in DB → show login (exists: true)
@@ -133,35 +151,57 @@ export async function checkUserExists(email: string | null, phone: string | null
         // User exists - show login
         if (userExistsInDb && dbResult.length > 0) {
           const user = dbResult[0];
+          // Return primary identifier if set, otherwise return both
+          const primaryIdentifier = user.primaryIdentifier || null;
+          
           return { 
             exists: true, 
             hasEmail: !!user.email,
             hasPhone: !!user.phone,
             email: user.email || null,
             phone: user.phone || null,
+            primaryIdentifier: primaryIdentifier, // 'email', 'phone', or null
             jssoApiCalled: true,
             jssoStatusCode: statusCode
           };
         }
-        return { exists: true, jssoApiCalled: true, jssoStatusCode: statusCode };
+        return { 
+          exists: true, 
+          primaryIdentifier: null, // Not in DB yet, so no primary identifier
+          jssoApiCalled: true, 
+          jssoStatusCode: statusCode 
+        };
       } else if (statusCode === 215 && !userExistsInDb) {
         // User doesn't exist in external system and not in DB - show signup
-        return { exists: false, jssoApiCalled: true, jssoStatusCode: statusCode };
+        return { 
+          exists: false, 
+          primaryIdentifier: null,
+          jssoApiCalled: true, 
+          jssoStatusCode: statusCode 
+        };
       } else {
         // Fallback: use DB check result
         if (userExistsInDb && dbResult.length > 0) {
           const user = dbResult[0];
+          const primaryIdentifier = user.primaryIdentifier || null;
+          
           return { 
             exists: true, 
             hasEmail: !!user.email,
             hasPhone: !!user.phone,
             email: user.email || null,
             phone: user.phone || null,
+            primaryIdentifier: primaryIdentifier,
             jssoApiCalled: true,
             jssoStatusCode: statusCode
           };
         }
-        return { exists: false, jssoApiCalled: true, jssoStatusCode: statusCode };
+        return { 
+          exists: false, 
+          primaryIdentifier: null,
+          jssoApiCalled: true, 
+          jssoStatusCode: statusCode 
+        };
       }
     } catch (externalApiError: any) {
       console.error('❌ Error calling JSSO external API:', externalApiError);
@@ -170,17 +210,25 @@ export async function checkUserExists(email: string | null, phone: string | null
       // Fallback to DB check if external API fails
       if (userExistsInDb && dbResult.length > 0) {
         const user = dbResult[0];
+        const primaryIdentifier = user.primaryIdentifier || null;
+        
         return { 
           exists: true, 
           hasEmail: !!user.email,
           hasPhone: !!user.phone,
           email: user.email || null,
           phone: user.phone || null,
+          primaryIdentifier: primaryIdentifier,
           jssoApiCalled: false,
           jssoError: externalApiError?.message || 'Unknown error'
         };
       }
-      return { exists: false, jssoApiCalled: false, jssoError: externalApiError?.message || 'Unknown error' };
+      return { 
+        exists: false, 
+        primaryIdentifier: null,
+        jssoApiCalled: false, 
+        jssoError: externalApiError?.message || 'Unknown error' 
+      };
     }
   } catch (error: any) {
     console.error('Error checking user existence:', error);

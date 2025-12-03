@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Users, BookOpen, FileText, Award, TrendingUp, Settings, LogOut, User as UserIcon, CheckCircle, XCircle, Clock, Search, Plus, Mail, Shield, Trash2, Building2, UserCog } from 'lucide-react';
 import { User } from '../services/authService';
 import { authService } from '../services/authService';
-import { getAllUsers, getAllModules, getAllMockTests, getAllRoles, getAllCertificationTracks, createUser, deleteUser, updateUser } from '../services/database';
+import { getAllUsers, getAllModules, getAllMockTests, getAllRoles, getAllCertificationTracks, createUser, deleteUser, updateUser, createMockTest, updateMockTest, deleteMockTest } from '../services/database';
 import UserDetailsModal from './admin/UserDetailsModal';
 import CourseEditor from './admin/CourseEditor';
 import TestEditor from './admin/TestEditor';
@@ -19,7 +19,7 @@ interface AdminDashboardProps {
 }
 
 export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'programs' | 'institutions' | 'leads' | 'bulk' | 'roles' | 'settings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'programs' | 'institutions' | 'leads' | 'bulk' | 'roles' | 'settings' | 'mockTests'>('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [editingCourse, setEditingCourse] = useState<any>(null);
@@ -142,18 +142,64 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
 
   const handleSaveCourse = (course: any) => {
     // In production, this would make an API call
-    console.log('Saving course:', course);
     alert('Course module saved successfully!');
     setShowCourseEditor(false);
     setEditingCourse(null);
   };
 
-  const handleSaveTest = (test: any) => {
-    // In production, this would make an API call
-    console.log('Saving test:', test);
-    alert('Mock test saved successfully!');
-    setShowTestEditor(false);
-    setEditingTest(null);
+  const handleSaveTest = async (test: any) => {
+    try {
+      if (editingTest) {
+        // Update existing test
+        await updateMockTest(test.id, {
+          title: test.title,
+          description: test.description,
+          duration: test.duration,
+          totalQuestions: test.totalQuestions,
+          passingScore: test.passingScore,
+          questions: test.questions,
+        });
+        alert('Mock test updated successfully!');
+      } else {
+        // Create new test
+        await createMockTest({
+          id: test.id,
+          title: test.title,
+          description: test.description,
+          duration: test.duration,
+          totalQuestions: test.totalQuestions,
+          passingScore: test.passingScore,
+          questions: test.questions,
+        });
+        alert('Mock test created successfully!');
+      }
+
+      // Reload mock tests
+      const testsData = await getAllMockTests();
+      setMockTests(testsData);
+
+      setShowTestEditor(false);
+      setEditingTest(null);
+    } catch (error: any) {
+      console.error('Error saving mock test:', error);
+      alert(`Error saving mock test: ${error.message || 'Unknown error'}`);
+    }
+  };
+
+  const handleDeleteTest = async (testId: string, testTitle: string) => {
+    if (confirm(`Are you sure you want to delete "${testTitle}"?\n\nThis action cannot be undone.`)) {
+      try {
+        await deleteMockTest(testId);
+        alert(`Mock test "${testTitle}" has been deleted successfully.`);
+
+        // Reload mock tests
+        const testsData = await getAllMockTests();
+        setMockTests(testsData);
+      } catch (error: any) {
+        console.error('Error deleting mock test:', error);
+        alert(`Error deleting mock test: ${error.message || 'Unknown error'}`);
+      }
+    }
   };
 
   const handleSaveAdmin = async () => {
@@ -759,6 +805,19 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                 </div>
               </button>
               <button
+                onClick={() => setActiveTab('mockTests')}
+                className={`py-3 px-4 rounded-t-lg font-semibold transition-all whitespace-nowrap ${
+                  activeTab === 'mockTests'
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <div className="flex items-center space-x-2">
+                  <FileText className="w-4 h-4" />
+                  <span>Mock Tests</span>
+                </div>
+              </button>
+              <button
                 onClick={() => setActiveTab('institutions')}
                 className={`py-3 px-4 rounded-t-lg font-semibold transition-all whitespace-nowrap ${
                   activeTab === 'institutions'
@@ -1036,6 +1095,103 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
 
             {/* Certification Programs Tab */}
             {activeTab === 'programs' && <CertificationProgramsManager />}
+
+            {/* Mock Tests Tab */}
+            {activeTab === 'mockTests' && (
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-slate-900">Mock Tests Management</h2>
+                  <button
+                    onClick={() => {
+                      setEditingTest(null);
+                      setShowTestEditor(true);
+                    }}
+                    className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-red-600 text-white px-4 py-2 rounded-lg hover:opacity-90 transition-all font-semibold"
+                  >
+                    <Plus className="w-5 h-5" />
+                    <span>Add Mock Test</span>
+                  </button>
+                </div>
+
+                {mockTests.length === 0 ? (
+                  <div className="text-center py-12 bg-slate-50 rounded-xl border-2 border-dashed border-slate-300">
+                    <FileText className="w-16 h-16 mx-auto mb-4 text-slate-400" />
+                    <h3 className="text-xl font-bold text-slate-900 mb-2">No Mock Tests Yet</h3>
+                    <p className="text-slate-600 mb-4">Create your first mock test to help users practice for their certification exam.</p>
+                    <button
+                      onClick={() => {
+                        setEditingTest(null);
+                        setShowTestEditor(true);
+                      }}
+                      className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-red-600 text-white px-6 py-3 rounded-lg hover:opacity-90 transition-all font-semibold mx-auto"
+                    >
+                      <Plus className="w-5 h-5" />
+                      <span>Create First Mock Test</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid gap-4">
+                    {mockTests.map((test) => (
+                      <div key={test.id} className="bg-white rounded-xl border-2 border-slate-200 p-6 hover:border-purple-300 hover:shadow-md transition-all">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-3 mb-3">
+                              <div className="bg-gradient-to-r from-purple-600 to-red-600 text-white w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg flex-shrink-0">
+                                <FileText className="w-6 h-6" />
+                              </div>
+                              <div>
+                                <h3 className="text-xl font-bold text-slate-900">{test.title}</h3>
+                                {test.description && (
+                                  <p className="text-sm text-slate-600 mt-1">{test.description}</p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-4 ml-15">
+                              <div className="flex items-center space-x-2 text-slate-600">
+                                <Clock className="w-4 h-4" />
+                                <span className="text-sm font-semibold">{test.duration || 60} minutes</span>
+                              </div>
+                              <div className="flex items-center space-x-2 text-slate-600">
+                                <FileText className="w-4 h-4" />
+                                <span className="text-sm font-semibold">{test.totalQuestions || (test.questions?.length || 0)} questions</span>
+                              </div>
+                              <div className="flex items-center space-x-2 text-slate-600">
+                                <Award className="w-4 h-4" />
+                                <span className="text-sm font-semibold">Pass: {test.passingScore || 70}%</span>
+                              </div>
+                              {test.createdAt && (
+                                <div className="text-xs text-slate-500">
+                                  Created: {new Date(test.createdAt).toLocaleDateString()}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2 ml-4">
+                            <button
+                              onClick={() => {
+                                setEditingTest(test);
+                                setShowTestEditor(true);
+                              }}
+                              className="flex items-center space-x-2 bg-blue-100 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-200 transition-all font-semibold"
+                            >
+                              <FileText className="w-4 h-4" />
+                              <span>Edit</span>
+                            </button>
+                            <button
+                              onClick={() => handleDeleteTest(test.id, test.title)}
+                              className="flex items-center space-x-2 bg-red-100 text-red-600 px-4 py-2 rounded-lg hover:bg-red-200 transition-all font-semibold"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              <span>Delete</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Institutions Tab */}
             {activeTab === 'institutions' && <InstitutionsManager />}

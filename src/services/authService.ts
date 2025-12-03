@@ -46,6 +46,8 @@ interface User {
     testId: string;
     score: number | null;
     completed: boolean | null;
+    completedAt: string | null;
+    answers: any | null;
   }>;
   credlyBadgeUrl: string | null;
   certificateNumber: string | null;
@@ -148,7 +150,7 @@ class AuthService {
     return null;
   }
 
-  async checkUserExists(email: string | null, phone: string | null): Promise<{ exists: boolean; hasEmail?: boolean; hasPhone?: boolean; email?: string; phone?: string }> {
+  async checkUserExists(email: string | null, phone: string | null): Promise<{ exists: boolean; hasEmail?: boolean; hasPhone?: boolean; email?: string; phone?: string; primaryIdentifier?: 'email' | 'phone' | null }> {
     try {
       const response = await fetch('/api/auth/check-user', {
         method: 'POST',
@@ -234,9 +236,11 @@ class AuthService {
           overallProgress: overallProgress,
         },
         mockTests: mockTestResults?.map(mt => ({
-          testId: mt.testId,
+          testId: String(mt.testId), // Ensure testId is always a string
           score: mt.score,
-          completed: mt.completed === null ? false : mt.completed,
+          completed: mt.completed === true || mt.completed === 1, // Handle both boolean and number (1/0)
+          completedAt: mt.completedAt ? new Date(mt.completedAt).toISOString() : null,
+          answers: mt.answers || null,
         })) || [],
         credlyBadgeUrl: dbUser.credlyBadgeUrl || null,
         certificateNumber: dbUser.certificateNumber || null,
@@ -342,7 +346,6 @@ class AuthService {
       // Store user session
       localStorage.setItem('currentUser', JSON.stringify(user));
 
-      console.log('====user=====', user);
       return user;
     } catch (error) {
       console.error('Login error:', error);
@@ -433,9 +436,11 @@ class AuthService {
           overallProgress: overallProgress,
         },
         mockTests: mockTestResults?.map(mt => ({
-          testId: mt.testId,
+          testId: String(mt.testId), // Ensure testId is always a string
           score: mt.score,
-          completed: mt.completed === null ? false : mt.completed,
+          completed: mt.completed === true || mt.completed === 1, // Handle both boolean and number (1/0)
+          completedAt: mt.completedAt ? new Date(mt.completedAt).toISOString() : null,
+          answers: mt.answers || null,
         })) || [],
         credlyBadgeUrl: dbUser.credlyBadgeUrl || null,
         certificateNumber: dbUser.certificateNumber || null,

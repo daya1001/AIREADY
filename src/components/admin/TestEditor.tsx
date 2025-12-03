@@ -110,7 +110,8 @@ export default function TestEditor({ test, onClose, onSave }: TestEditorProps) {
 
   const handleSave = () => {
     if (isNewTest) {
-      const newId = '3'; // In production, generate proper ID
+      // Generate a unique ID based on timestamp and random number
+      const newId = `test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       onSave({ ...editedTest, id: newId });
     } else {
       onSave(editedTest);

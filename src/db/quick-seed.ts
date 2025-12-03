@@ -13,8 +13,6 @@ async function quickSeed() {
   const client = await pool.connect();
 
   try {
-    console.log('🌱 Quick seeding test users...');
-
     // Insert admin user
     await client.query(`
       INSERT INTO users (
@@ -32,7 +30,6 @@ async function quickSeed() {
       )
       ON CONFLICT (email) DO NOTHING
     `);
-    console.log('✅ Admin user created');
 
     // Insert test user - John
     await client.query(`
@@ -53,7 +50,6 @@ async function quickSeed() {
       )
       ON CONFLICT (email) DO NOTHING
     `);
-    console.log('✅ John user created');
 
     // Insert test user - Jane
     await client.query(`
@@ -74,13 +70,6 @@ async function quickSeed() {
       )
       ON CONFLICT (email) DO NOTHING
     `);
-    console.log('✅ Jane user created');
-
-    console.log('✅ Quick seed completed!');
-    console.log('\nYou can now login with:');
-    console.log('  Admin: admin@etaiready.com / admin123');
-    console.log('  User 1: john@example.com / password123');
-    console.log('  User 2: jane@example.com / password123');
   } catch (error) {
     console.error('❌ Error seeding:', error);
   } finally {

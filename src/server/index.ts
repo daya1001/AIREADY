@@ -53,5 +53,5 @@ app.use('/api/certification-tracks', certificationTracksRouter); // Use new cert
 app.use('/api/leads', leadsRouter); // Use new leads router
 
 app.listen(PORT, () => {
-  console.log(`Backend server running on port ${PORT}`);
+  // Server started
 });

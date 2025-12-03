@@ -13,8 +13,6 @@ async function addAnswersColumn() {
   const client = await pool.connect();
 
   try {
-    console.log('🔄 Adding answers column to mock_test_results table...');
-
     // Check if column already exists
     const checkColumn = await client.query(`
       SELECT column_name
@@ -23,18 +21,13 @@ async function addAnswersColumn() {
       AND column_name='answers';
     `);
 
-    if (checkColumn.rows.length > 0) {
-      console.log('✅ Column "answers" already exists in mock_test_results table');
-    } else {
+    if (checkColumn.rows.length === 0) {
       // Add the answers column
       await client.query(`
         ALTER TABLE mock_test_results
         ADD COLUMN answers JSONB;
       `);
-      console.log('✅ Successfully added answers column to mock_test_results table');
     }
-
-    console.log('✅ Migration completed!');
   } catch (error) {
     console.error('❌ Error during migration:', error);
     throw error;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { CheckCircle, Award, Building2, GraduationCap, Users, ChevronRight, Shield, FileCheck, Zap, TrendingUp, Target, Globe, Briefcase, Star, Quote, Mail, Phone, MapPin, Linkedin, Twitter, Facebook, Instagram, ChevronDown, HelpCircle } from 'lucide-react';
 import RegistrationForm from './components/RegistrationForm';
@@ -140,7 +140,6 @@ function LandingPage() {
   const handleDownloadCurriculum = () => {
     if (validateForm()) {
       // Here you would typically send the data to your backend
-      console.log('Form data:', curriculumFormData);
 
       // Simulate PDF download
       alert('Thank you! The curriculum PDF will be downloaded shortly.');
@@ -2809,16 +2808,15 @@ function LoginPage() {
   const { setCurrentUser } = React.useContext(AuthContext);
 
   const handleLogin = (user: User) => {
+    // Set user in context and localStorage
     setCurrentUser(user);
     localStorage.setItem('currentUser', JSON.stringify(user));
 
-    // Navigate based on role
+    // Always redirect to dashboard after successful login
     if (user.role === 'admin') {
-      navigate('/admin');
-    } else if (user.role === 'institution') {
-      navigate('/institution');
+      navigate('/admin', { replace: true });
     } else {
-      navigate('/dashboard');
+      navigate('/dashboard', { replace: true });
     }
   };
 
@@ -2841,15 +2839,31 @@ const AuthContext = React.createContext<{
 function DashboardPage() {
   const navigate = useNavigate();
   const { currentUser, setCurrentUser } = React.useContext(AuthContext);
+  const isLoggingOut = useRef(false);
 
   const handleLogout = () => {
-    setCurrentUser(null);
-    localStorage.removeItem('currentUser');
-    navigate('/');
+    // Set flag to prevent redirect to login during logout
+    isLoggingOut.current = true;
+    // Navigate to home page first
+    navigate('/', { replace: true });
+    // Clear user from context and localStorage after navigation
+    // Use setTimeout to ensure navigation completes before state update
+    setTimeout(() => {
+      setCurrentUser(null);
+      localStorage.removeItem('currentUser');
+      isLoggingOut.current = false;
+    }, 0);
   };
 
+  // Don't redirect if we're in the process of logging out
+  // If no user, redirect to home page (login route is disabled)
+  if (!currentUser && !isLoggingOut.current) {
+    return <Navigate to="/" replace />;
+  }
+
+  // If no user and not logging out, redirect to login
   if (!currentUser) {
-    return <Navigate to="/login" replace />;
+    return null; // Component will unmount during navigation
   }
 
   return (
@@ -2863,13 +2877,29 @@ function DashboardPage() {
 function AdminPage() {
   const navigate = useNavigate();
   const { currentUser, setCurrentUser } = React.useContext(AuthContext);
+  const isLoggingOut = useRef(false);
 
   const handleLogout = () => {
-    setCurrentUser(null);
-    localStorage.removeItem('currentUser');
-    navigate('/');
+    // Set flag to prevent redirect to login during logout
+    isLoggingOut.current = true;
+    // Navigate to home page first
+    navigate('/', { replace: true });
+    // Clear user from context and localStorage after navigation
+    // Use setTimeout to ensure navigation completes before state update
+    setTimeout(() => {
+      setCurrentUser(null);
+      localStorage.removeItem('currentUser');
+      isLoggingOut.current = false;
+    }, 0);
   };
 
+  // Don't redirect if we're in the process of logging out
+  // If no user, redirect to home page (login route is disabled)
+  if (!currentUser && !isLoggingOut.current) {
+    return <Navigate to="/" replace />;
+  }
+
+  // If no user and not logging out, return null (component will unmount during navigation)
   if (!currentUser) {
     return <Navigate to="/login" replace />;
   }
@@ -2889,19 +2919,38 @@ function AdminPage() {
 function InstitutionPage() {
   const navigate = useNavigate();
   const { currentUser, setCurrentUser} = React.useContext(AuthContext);
+  const isLoggingOut = useRef(false);
 
   const handleLogout = () => {
-    setCurrentUser(null);
-    localStorage.removeItem('currentUser');
-    navigate('/');
+    // Set flag to prevent redirect to login during logout
+    isLoggingOut.current = true;
+    // Navigate to home page first
+    navigate('/', { replace: true });
+    // Clear user from context and localStorage after navigation
+    // Use setTimeout to ensure navigation completes before state update
+    setTimeout(() => {
+      setCurrentUser(null);
+      localStorage.removeItem('currentUser');
+      isLoggingOut.current = false;
+    }, 0);
   };
 
-  if (!currentUser) {
-    return <Navigate to="/login" replace />;
+  // Don't redirect if we're in the process of logging out
+  // If no user, redirect to home page (login route is disabled)
+  if (!currentUser && !isLoggingOut.current) {
+    return <Navigate to="/" replace />;
   }
 
-  if (currentUser.role !== 'institution') {
+  // If no user and not logging out, return null (component will unmount during navigation)
+  if (!currentUser) {
+    return null;
+  }
+
+  if (currentUser.role !== 'institution' && currentUser.role !== 'admin') {
     return <Navigate to="/dashboard" replace />;
+  }
+  if (currentUser.role === 'admin') {
+    return <Navigate to="/admin" replace />;
   }
 
   // Transform user object to institution user format
@@ -2944,7 +2993,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home2Page />} />
           <Route path="/page-1" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
+          {/* <Route path="/login" element={<LoginPage />} /> */}
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/admin" element={<AdminPage />} />
