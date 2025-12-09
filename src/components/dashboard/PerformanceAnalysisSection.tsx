@@ -16,7 +16,7 @@ interface PerformanceAnalysisSectionProps {
 
 export default function PerformanceAnalysisSection({ user, availableTests }: PerformanceAnalysisSectionProps) {
   // Filter completed tests - handle boolean true explicitly
-  const completedTests = (user.mockTests || []).filter(t => t.completed === true);
+  const completedTests = user.mockTests.filter(t => t.completed === true);
   const hasCompletedTests = completedTests.length > 0;
 
   if (!hasCompletedTests) {
@@ -41,12 +41,12 @@ export default function PerformanceAnalysisSection({ user, availableTests }: Per
     );
   }
 
-  const completedTestsWithScores = (user.mockTests || []).filter(t => t.completed && t.score !== null);
+  const completedTestsWithScores = user.mockTests.filter(t => t.completed && t.score !== null);
   const averageScore = completedTestsWithScores.length > 0
     ? Math.round(completedTestsWithScores.reduce((acc, t) => acc + (t.score || 0), 0) / completedTestsWithScores.length)
     : 0;
 
-  const passedTests = (user.mockTests || []).filter(t => t.completed && t.score && t.score >= 70).length;
+  const passedTests = user.mockTests.filter(t => t.completed && t.score && t.score >= 70).length;
   const passRate = completedTests.length > 0
     ? Math.round((passedTests / completedTests.length) * 100)
     : 0;
@@ -62,7 +62,7 @@ export default function PerformanceAnalysisSection({ user, availableTests }: Per
   const completedTestsWithDetails = availableTests
     .map((test) => {
       // Match testId - normalize both to strings for comparison
-      const userTest = (user.mockTests || []).find(t => 
+      const userTest = user.mockTests.find(t => 
         String(t.testId).trim() === String(test.id).trim()
       );
       
